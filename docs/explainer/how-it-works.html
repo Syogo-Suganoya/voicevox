@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VOICEVOX しくみ図鑑</title>
+<meta name="description" content="文字から声ができるまでの VOICEVOX エディターのしくみを、イラストで説明した非公式の解説資料。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Noto+Sans+JP:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="how-it-works.html">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="3" width="28" height="22" rx="8" fill="#2f9a68"/><path d="M10 25 L9 30 L16 25 Z" fill="#2f9a68"/><g stroke="#fff" stroke-width="2.4" stroke-linecap="round"><line x1="9" y1="12" x2="9" y2="16"/><line x1="13" y1="9" x2="13" y2="19"/><line x1="17" y1="11" x2="17" y2="17"/><line x1="21" y1="8" x2="21" y2="20"/><line x1="25" y1="12" x2="25" y2="16"/></g></svg>
+      <span class="brand-text">VOICEVOX 解説資料</span>
+    </a>
+    <nav class="pages" aria-label="資料の切りかえ">
+      <a href="how-it-works.html" aria-current="page">しくみ図鑑</a>
+      <a href="code-map.html">コード逆引き</a>
+    </nav>
+  </div>
+</header>
+
+<section class="cover">
+  <svg class="cover-wave" viewBox="0 0 520 200" aria-hidden="true">
+    <g fill="none" stroke-linecap="round">
+      <path d="M0 120 C 60 60, 120 180, 180 110 S 300 40, 360 110 S 470 170, 520 100" stroke="#2f9a68" stroke-width="5" opacity=".35"/>
+      <path d="M0 140 C 70 90, 130 190, 200 130 S 320 70, 380 130 S 480 180, 520 130" stroke="#c98a00" stroke-width="4" opacity=".3"/>
+    </g>
+    <g fill="#2f9a68" opacity=".18">
+      <rect x="390" y="40" width="14" height="60" rx="7"/><rect x="414" y="20" width="14" height="100" rx="7"/><rect x="438" y="50" width="14" height="40" rx="7"/><rect x="462" y="30" width="14" height="80" rx="7"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <div class="kicker">VOICEVOX EDITOR · HOW IT WORKS</div>
+    <h1>文字が <em>声</em> になるまでの<br>しくみ図鑑</h1>
+    <p class="lead">文章を打ちこむと、キャラクターがしゃべってくれる VOICEVOX。<br>画面の裏側で何が起きているのか、イラストで見てみよう。</p>
+    <div class="basis">
+      <span>VOICEVOX エディター main ブランチ（933997f、2026年10月18日）をもとに作成</span>
+    </div>
+    <p class="notice">非公式の解説資料です。VOICEVOX の公式資料ではありません。</p>
+  </div>
+</section>
+
+<div class="wrap layout">
+  <aside class="toc" aria-label="もくじ">
+    <div class="toc-title">もくじ</div>
+    <ol>
+      <li><a href="#what"><span>01</span>VOICEVOX ってなに？</a></li>
+      <li><a href="#where"><span>02</span>どこで動くの？</a></li>
+      <li><a href="#roles"><span>03</span>係の分担</a></li>
+      <li><a href="#pipeline"><span>04</span>声ができるまで</a></li>
+      <li><a href="#accent"><span>05</span>アクセントの設計図</a></li>
+      <li><a href="#engine"><span>06</span>エンジンとの会話</a></li>
+      <li><a href="#undo"><span>07</span>元に戻すしくみ</a></li>
+      <li><a href="#fast"><span>08</span>すぐ鳴らす工夫</a></li>
+      <li><a href="#song"><span>09</span>歌わせるしくみ</a></li>
+      <li><a href="#save"><span>10</span>保存と書き出し</a></li>
+      <li><a href="#safety"><span>11</span>安全のしくみ</a></li>
+      <li><a href="#tools"><span>12</span>使っている道具</a></li>
+      <li><a href="#words"><span>13</span>ことば</a></li>
+    </ol>
+    <div class="also">あわせて読む：<a href="code-map.html">コード逆引き（開発者向け）</a></div>
+  </aside>
+
+  <main>
+    <div class="toc-mobile">
+      <label class="toc-title" for="toc-select">もくじ</label>
+      <select id="toc-select">
+        <option value="#what">01 VOICEVOX ってなに？</option>
+        <option value="#where">02 どこで動くの？</option>
+        <option value="#roles">03 係の分担</option>
+        <option value="#pipeline">04 声ができるまで</option>
+        <option value="#accent">05 アクセントの設計図</option>
+        <option value="#engine">06 エンジンとの会話</option>
+        <option value="#undo">07 元に戻すしくみ</option>
+        <option value="#fast">08 すぐ鳴らす工夫</option>
+        <option value="#song">09 歌わせるしくみ</option>
+        <option value="#save">10 保存と書き出し</option>
+        <option value="#safety">11 安全のしくみ</option>
+        <option value="#tools">12 使っている道具</option>
+        <option value="#words">13 ことば</option>
+      </select>
+    </div>
+
+    <!-- 01 -->
+    <section class="sec" id="what">
+      <div class="sec-head"><div class="sec-num">01</div><h2>VOICEVOX ってなに？</h2></div>
+      <p class="say">文章を入力すると、<mark>キャラクターの声で読み上げてくれる</mark>無料のソフトです。歌を歌わせることもできます。</p>
+      <p class="say">中身は、役割のちがう <mark>3つのプログラム</mark> の組み合わせです。この資料で説明するのは、いちばん左の「エディター」です。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 270" role="img" aria-label="エディター、エンジン、コアの3つのプログラムの関係">
+          <defs>
+            <marker id="ar1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#46554f"/></marker>
+          </defs>
+          <!-- エディター -->
+          <rect x="20" y="30" width="250" height="200" rx="20" fill="#e2f3e9" stroke="#2f9a68" stroke-width="3"/>
+          <rect x="60" y="56" width="170" height="78" rx="8" fill="#fff" stroke="#2f9a68" stroke-width="2"/>
+          <rect x="60" y="56" width="170" height="16" rx="8" fill="#2f9a68"/>
+          <circle cx="72" cy="64" r="3" fill="#fff"/><circle cx="82" cy="64" r="3" fill="#fff"/>
+          <rect x="72" y="82" width="110" height="10" rx="5" fill="#cfe8da"/>
+          <rect x="72" y="100" width="146" height="10" rx="5" fill="#cfe8da"/>
+          <rect x="72" y="118" width="80" height="8" rx="4" fill="#f6c9da"/>
+          <text x="145" y="166" text-anchor="middle" class="h" font-size="22" fill="#1f7550">エディター</text>
+          <text x="145" y="190" text-anchor="middle" font-size="14" fill="#46554f">画面を見せて、操作を受けとる</text>
+          <text x="145" y="214" text-anchor="middle" font-size="12" fill="#7b8782" class="code">TypeScript・Electron・Vue</text>
+          <!-- エンジン -->
+          <rect x="325" y="30" width="250" height="200" rx="20" fill="#e3edfa" stroke="#2f72c9" stroke-width="3"/>
+          <rect x="400" y="54" width="100" height="22" rx="6" fill="#fff" stroke="#2f72c9" stroke-width="2"/>
+          <rect x="400" y="82" width="100" height="22" rx="6" fill="#fff" stroke="#2f72c9" stroke-width="2"/>
+          <rect x="400" y="110" width="100" height="22" rx="6" fill="#fff" stroke="#2f72c9" stroke-width="2"/>
+          <circle cx="414" cy="65" r="4" fill="#2f9a68"/><circle cx="414" cy="93" r="4" fill="#2f9a68"/><circle cx="414" cy="121" r="4" fill="#c98a00"/>
+          <text x="450" y="166" text-anchor="middle" class="h" font-size="22" fill="#1f5297">エンジン</text>
+          <text x="450" y="190" text-anchor="middle" font-size="14" fill="#46554f">声の注文を受ける窓口</text>
+          <text x="450" y="214" text-anchor="middle" font-size="12" fill="#7b8782" class="code">Python・FastAPI・OpenJTalk</text>
+          <!-- コア -->
+          <rect x="630" y="30" width="250" height="200" rx="20" fill="#efe9fa" stroke="#7856c2" stroke-width="3"/>
+          <rect x="715" y="58" width="80" height="72" rx="10" fill="#fff" stroke="#7856c2" stroke-width="2"/>
+          <rect x="733" y="76" width="44" height="36" rx="6" fill="#7856c2" opacity=".85"/>
+          <g stroke="#7856c2" stroke-width="3" stroke-linecap="round">
+            <line x1="728" y1="52" x2="728" y2="58"/><line x1="755" y1="52" x2="755" y2="58"/><line x1="782" y1="52" x2="782" y2="58"/>
+            <line x1="728" y1="130" x2="728" y2="136"/><line x1="755" y1="130" x2="755" y2="136"/><line x1="782" y1="130" x2="782" y2="136"/>
+          </g>
+          <text x="755" y="166" text-anchor="middle" class="h" font-size="22" fill="#5a3ea0">コア</text>
+          <text x="755" y="190" text-anchor="middle" font-size="14" fill="#46554f">声の波を計算する</text>
+          <text x="755" y="214" text-anchor="middle" font-size="12" fill="#7b8782" class="code">Rust・ONNX Runtime</text>
+          <!-- 矢印 -->
+          <line x1="272" y1="120" x2="320" y2="120" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar1)"/>
+          <line x1="577" y1="120" x2="625" y2="120" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar1)"/>
+          <text x="297" y="108" text-anchor="middle" font-size="12" fill="#46554f">注文</text>
+          <text x="601" y="108" text-anchor="middle" font-size="12" fill="#46554f">計算</text>
+          <text x="145" y="256" text-anchor="middle" font-size="13" fill="#2f9a68" class="h">← この資料で説明するところ</text>
+        </svg>
+        <figcaption>3つは別々のリポジトリで作られています。エディターは <code>VOICEVOX/voicevox</code>、エンジンは <code>voicevox_engine</code>、コアは <code>voicevox_core</code>。</figcaption>
+      </figure>
+      <div class="tip"><span class="tip-icon">💡</span><p>キャラクターの声や絵は、オープンソースとは相性の悪いライセンスを持っていることが多いので、<b>キャラクターを含まない「OSS 版」</b>と、キャラクターを含めた「製品版」を分けて配っています。</p></div>
+    </section>
+
+    <!-- 02 -->
+    <section class="sec" id="where">
+      <div class="sec-head"><div class="sec-num">02</div><h2>どこで動くの？</h2></div>
+      <p class="say">声づくりは <mark>あなたのパソコンの中だけ</mark> で行われます。エディターとエンジンは、同じパソコンの中で「Web の通信」を使って話しています。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 330" role="img" aria-label="パソコンの中でエディターとエンジンが localhost で通信する図">
+          <defs>
+            <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#2f72c9"/></marker>
+            <marker id="ar2b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#2f9a68"/></marker>
+          </defs>
+          <rect x="14" y="14" width="872" height="270" rx="22" fill="#fcfbf7" stroke="#5b6670" stroke-width="2.5"/>
+          <text x="40" y="44" class="h" font-size="16" fill="#5b6670">あなたのパソコン</text>
+          <!-- エディターのウィンドウ -->
+          <rect x="44" y="64" width="330" height="196" rx="14" fill="#fff" stroke="#2f9a68" stroke-width="3"/>
+          <rect x="44" y="64" width="330" height="30" rx="14" fill="#2f9a68"/>
+          <rect x="44" y="80" width="330" height="14" fill="#2f9a68"/>
+          <text x="62" y="85" font-size="13" fill="#fff" class="h">VOICEVOX（エディター）</text>
+          <rect x="62" y="108" width="140" height="22" rx="6" fill="#e2f3e9"/><text x="72" y="124" font-size="12" fill="#1f7550">こんにちは</text>
+          <rect x="62" y="136" width="140" height="22" rx="6" fill="#e2f3e9"/><text x="72" y="152" font-size="12" fill="#1f7550">今日はいい天気</text>
+          <rect x="216" y="108" width="140" height="50" rx="8" fill="#fdf2d6"/><text x="286" y="138" text-anchor="middle" font-size="12" fill="#8f6200">パラメーター</text>
+          <g fill="#d2457a"><rect x="66" y="196" width="8" height="20" rx="4"/><rect x="80" y="186" width="8" height="40" rx="4"/><rect x="94" y="192" width="8" height="28" rx="4"/><rect x="108" y="182" width="8" height="48" rx="4"/><rect x="122" y="196" width="8" height="20" rx="4"/></g>
+          <text x="148" y="211" font-size="12" fill="#a52c5b">ここで音を鳴らす</text>
+          <text x="209" y="250" text-anchor="middle" font-size="12" fill="#7b8782" class="code">Electron のウィンドウ</text>
+          <!-- 通信 -->
+          <line x1="380" y1="128" x2="520" y2="128" stroke="#2f72c9" stroke-width="3" marker-end="url(#ar2)"/>
+          <line x1="520" y1="168" x2="380" y2="168" stroke="#2f9a68" stroke-width="3" marker-end="url(#ar2b)"/>
+          <text x="450" y="118" text-anchor="middle" font-size="12.5" fill="#1f5297">「この文を読んで」</text>
+          <text x="450" y="190" text-anchor="middle" font-size="12.5" fill="#1f7550">音のデータ（WAV）</text>
+          <rect x="384" y="138" width="132" height="22" rx="11" fill="#e3edfa"/>
+          <text x="450" y="153" text-anchor="middle" font-size="11.5" fill="#1f5297" class="code">localhost:50021</text>
+          <!-- エンジン -->
+          <rect x="528" y="64" width="330" height="196" rx="14" fill="#e3edfa" stroke="#2f72c9" stroke-width="3"/>
+          <text x="693" y="94" text-anchor="middle" class="h" font-size="17" fill="#1f5297">エンジン（別のプログラム）</text>
+          <rect x="560" y="110" width="266" height="40" rx="10" fill="#fff" stroke="#2f72c9" stroke-width="1.5"/>
+          <text x="693" y="135" text-anchor="middle" font-size="13" fill="#1f5297">文を読みがなとアクセントに分ける</text>
+          <rect x="560" y="160" width="266" height="40" rx="10" fill="#efe9fa" stroke="#7856c2" stroke-width="1.5"/>
+          <text x="693" y="185" text-anchor="middle" font-size="13" fill="#5a3ea0">コアで声の波を計算する</text>
+          <text x="693" y="238" text-anchor="middle" font-size="12" fill="#7b8782">エディターが起動するときに一緒に起動される</text>
+          <text x="450" y="312" text-anchor="middle" font-size="13" fill="#46554f">Web ブラウザーと Web サイトの関係と同じしくみを、1台のパソコンの中で使っています。</text>
+        </svg>
+      </figure>
+      <div class="cards">
+        <div class="card leaf"><div class="icon">🪟</div><h4>エディター</h4><p>Electron というしくみで、Web の技術（HTML・CSS・JavaScript）を使ってデスクトップアプリとして動きます。</p></div>
+        <div class="card sky"><div class="icon">🔌</div><h4>エンジン</h4><p>エディターがエンジンのプログラムを起動し、<code>--port 50021</code> のように番号を渡します。番号がふさがっていたら、別の番号を探します。</p></div>
+        <div class="card sun"><div class="icon">🌐</div><h4>ブラウザ版もある</h4><p>開発やテスト用に、ブラウザだけで動く版もあります。エンジンを起動できないので、すでに動いているエンジンにつなぎます。</p></div>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section class="sec" id="roles">
+      <div class="sec-head"><div class="sec-num">03</div><h2>係の分担</h2></div>
+      <p class="say">エディターの中は、<mark>5つの係</mark> に分かれています。画面の係が直接ファイルやエンジンをさわらず、<mark>かならず「記録係」を通す</mark> のがルールです。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 326" role="img" aria-label="画面係、記録係、電話係、裏方係、エンジンの関係">
+          <defs>
+            <marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#46554f"/></marker>
+          </defs>
+          <!-- 画面係 -->
+          <circle cx="110" cy="130" r="72" fill="#fbe5ee" stroke="#d2457a" stroke-width="3"/>
+          <rect x="78" y="92" width="64" height="44" rx="6" fill="#fff" stroke="#d2457a" stroke-width="2"/>
+          <rect x="86" y="102" width="34" height="6" rx="3" fill="#f6c9da"/><rect x="86" y="114" width="48" height="6" rx="3" fill="#f6c9da"/>
+          <text x="110" y="162" text-anchor="middle" class="h" font-size="18" fill="#a52c5b">画面係</text>
+          <text x="110" y="182" text-anchor="middle" font-size="11.5" fill="#46554f" class="code">components/</text>
+          <!-- 記録係 -->
+          <circle cx="360" cy="130" r="80" fill="#e2f3e9" stroke="#2f9a68" stroke-width="3"/>
+          <rect x="332" y="84" width="56" height="58" rx="6" fill="#fff" stroke="#2f9a68" stroke-width="2"/>
+          <g stroke="#2f9a68" stroke-width="2.5" stroke-linecap="round"><line x1="342" y1="98" x2="378" y2="98"/><line x1="342" y1="110" x2="378" y2="110"/><line x1="342" y1="122" x2="366" y2="122"/></g>
+          <text x="360" y="166" text-anchor="middle" class="h" font-size="18" fill="#1f7550">記録係</text>
+          <text x="360" y="186" text-anchor="middle" font-size="11.5" fill="#46554f" class="code">store/（Vuex）</text>
+          <!-- 電話係 -->
+          <circle cx="610" cy="78" r="68" fill="#e3edfa" stroke="#2f72c9" stroke-width="3"/>
+          <path transform="translate(0 -16)" d="M592 58 q-8 10 0 26 q10 18 26 22 q10 2 14 -6 l-10 -8 q-4 4 -10 0 q-8 -6 -10 -14 q-2 -6 4 -8 l-6 -12 q-4 -2 -8 0z" fill="#2f72c9"/>
+          <text x="610" y="114" text-anchor="middle" class="h" font-size="16" fill="#1f5297">電話係</text>
+          <text x="610" y="132" text-anchor="middle" font-size="10.5" fill="#46554f" class="code">openapi/ など</text>
+          <!-- 裏方係 -->
+          <circle cx="610" cy="228" r="70" fill="#fdf2d6" stroke="#c98a00" stroke-width="3"/>
+          <rect x="592" y="184" width="36" height="28" rx="4" fill="#fff" stroke="#c98a00" stroke-width="2"/>
+          <path d="M592 190 h14 l4 -6 h18" fill="none" stroke="#c98a00" stroke-width="2"/>
+          <text x="610" y="238" text-anchor="middle" class="h" font-size="16" fill="#8f6200">裏方係</text>
+          <text x="610" y="256" text-anchor="middle" font-size="10" fill="#46554f" class="code">backend/electron/</text>
+          <!-- エンジン -->
+          <rect x="760" y="40" width="124" height="80" rx="16" fill="#fff" stroke="#2f72c9" stroke-width="2.5" stroke-dasharray="6 4"/>
+          <text x="822" y="86" text-anchor="middle" class="h" font-size="16" fill="#1f5297">エンジン</text>
+          <rect x="760" y="188" width="124" height="80" rx="16" fill="#fff" stroke="#c98a00" stroke-width="2.5" stroke-dasharray="6 4"/>
+          <text x="822" y="224" text-anchor="middle" class="h" font-size="14" fill="#8f6200">ファイル・設定</text>
+          <text x="822" y="244" text-anchor="middle" class="h" font-size="14" fill="#8f6200">エンジンの起動</text>
+          <!-- 矢印 -->
+          <line x1="184" y1="130" x2="274" y2="130" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar3)"/>
+          <text x="229" y="120" text-anchor="middle" font-size="12" fill="#46554f">頼む</text>
+          <line x1="438" y1="110" x2="544" y2="88" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar3)"/>
+          <line x1="438" y1="152" x2="544" y2="210" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar3)"/>
+          <line x1="680" y1="80" x2="754" y2="80" stroke="#2f72c9" stroke-width="2.5" marker-end="url(#ar3)"/>
+          <line x1="682" y1="228" x2="754" y2="228" stroke="#c98a00" stroke-width="2.5" marker-end="url(#ar3)"/>
+          <text x="717" y="70" text-anchor="middle" font-size="11" fill="#1f5297">HTTP</text>
+          <text x="718" y="218" text-anchor="middle" font-size="11" fill="#8f6200">OS の機能</text>
+          <text x="450" y="318" text-anchor="middle" font-size="12.5" fill="#46554f">画面係 → 記録係 → 電話係・裏方係 の順に、外の世界へ近づいていく</text>
+        </svg>
+      </figure>
+      <div class="cards">
+        <div class="card berry"><div class="icon">🖼️</div><h4>画面係</h4><p>ボタンやテキスト欄を表示して、押されたら記録係に頼みます。Vue のコンポーネントです。</p></div>
+        <div class="card leaf"><div class="icon">📒</div><h4>記録係</h4><p>今の状態（台本、選んでいる声、設定…）をすべてノートに持ち、変更もここで行います。Vuex のストアです。</p></div>
+        <div class="card sky"><div class="icon">☎️</div><h4>電話係</h4><p>エンジンへの注文を担当します。注文の書き方は、エンジンの説明書（OpenAPI）から自動で作られます。</p></div>
+        <div class="card sun"><div class="icon">🧰</div><h4>裏方係</h4><p>ファイルの読み書き、設定の保存、エンジンの起動・終了など、ブラウザだけではできない仕事をします。</p></div>
+        <div class="card stone"><div class="icon">🚪</div><h4>受付（プリロード）</h4><p>画面側と裏方係の間にある小さな窓口です。決められたお願いだけを通します（<a href="#safety">11 安全のしくみ</a>）。</p></div>
+      </div>
+      <details class="code-box" open>
+        <summary>コードで見ると：画面係は記録係に「お願い」するだけ<span class="tag">Vue</span></summary>
+<pre><span class="c">// components/Talk/AudioCell.vue（短くしたもの）</span>
+const store = useStore();
+
+<span class="c">// テキスト欄の文字が変わったら、記録係にお願いする</span>
+await store.actions.COMMAND_CHANGE_AUDIO_ITEM_TEXT({ audioKey, text });
+
+<span class="c">// 記録係のノートを読むのは自由</span>
+const audioItem = computed(() =&gt; store.state.audioItems[audioKey]);</pre>
+        <p class="code-note">画面係はエンジンのことを何も知りません。「文字が変わった」と伝えるだけで、エンジンへの注文やノートの書きかえは記録係が引き受けます。こうしておくと、状態が予想外に変わったときの原因を探しやすくなります。</p>
+      </details>
+    </section>
+
+    <!-- 04 -->
+    <section class="sec" id="pipeline">
+      <div class="sec-head"><div class="sec-num">04</div><h2>声ができるまで</h2></div>
+      <p class="say">エンジンへの注文は <mark>2回</mark> に分かれています。1回目で「どう読むか」の設計図をもらい、2回目でその設計図から声を作ってもらいます。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 400" role="img" aria-label="文字から声ができるまでの8ステップ">
+          <defs>
+            <marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7b8782"/></marker>
+          </defs>
+          <g font-size="13">
+            <!-- 1段目 -->
+            <rect x="16" y="20" width="196" height="150" rx="16" fill="#fbe5ee" stroke="#d2457a" stroke-width="2"/>
+            <circle cx="42" cy="46" r="15" fill="#d2457a"/><text x="42" y="51" text-anchor="middle" fill="#fff" class="code" font-size="14">1</text>
+            <text x="64" y="52" class="h" font-size="16" fill="#a52c5b">文字を書く</text>
+            <rect x="32" y="74" width="164" height="34" rx="8" fill="#fff"/><text x="114" y="96" text-anchor="middle" fill="#1e2b26">こんにちは[あいさつ]</text>
+            <text x="114" y="140" text-anchor="middle" fill="#46554f">テキスト欄に入力</text>
+
+            <rect x="236" y="20" width="196" height="150" rx="16" fill="#fbe5ee" stroke="#d2457a" stroke-width="2"/>
+            <circle cx="262" cy="46" r="15" fill="#d2457a"/><text x="262" y="51" text-anchor="middle" fill="#fff" class="code" font-size="14">2</text>
+            <text x="284" y="52" class="h" font-size="16" fill="#a52c5b">読む文に整える</text>
+            <rect x="252" y="74" width="164" height="34" rx="8" fill="#fff"/><text x="334" y="96" text-anchor="middle" fill="#1e2b26">こんにちは</text>
+            <text x="334" y="132" text-anchor="middle" fill="#46554f">[メモ] や {漢字|かんじ}</text>
+            <text x="334" y="150" text-anchor="middle" fill="#46554f">のルビを処理</text>
+
+            <rect x="456" y="20" width="196" height="150" rx="16" fill="#e3edfa" stroke="#2f72c9" stroke-width="2"/>
+            <circle cx="482" cy="46" r="15" fill="#2f72c9"/><text x="482" y="51" text-anchor="middle" fill="#fff" class="code" font-size="14">3</text>
+            <text x="504" y="52" class="h" font-size="16" fill="#1f5297">読み方を注文</text>
+            <rect x="472" y="74" width="164" height="34" rx="8" fill="#fff"/><text x="554" y="96" text-anchor="middle" fill="#1f5297" class="code" font-size="12">POST /audio_query</text>
+            <text x="554" y="140" text-anchor="middle" fill="#46554f">エンジンに文を送る</text>
+
+            <rect x="676" y="20" width="208" height="150" rx="16" fill="#e3edfa" stroke="#2f72c9" stroke-width="2"/>
+            <circle cx="702" cy="46" r="15" fill="#2f72c9"/><text x="702" y="51" text-anchor="middle" fill="#fff" class="code" font-size="14">4</text>
+            <text x="724" y="52" class="h" font-size="16" fill="#1f5297">設計図が届く</text>
+            <g><rect x="694" y="72" width="34" height="30" rx="6" fill="#fff"/><text x="711" y="92" text-anchor="middle">コ</text>
+            <rect x="732" y="64" width="34" height="38" rx="6" fill="#fff"/><text x="749" y="88" text-anchor="middle">ン</text>
+            <rect x="770" y="64" width="34" height="38" rx="6" fill="#fff"/><text x="787" y="88" text-anchor="middle">ニ</text>
+            <rect x="808" y="64" width="34" height="38" rx="6" fill="#fff"/><text x="825" y="88" text-anchor="middle">チ</text>
+            <rect x="846" y="64" width="30" height="38" rx="6" fill="#fff"/><text x="861" y="88" text-anchor="middle">ワ</text></g>
+            <text x="780" y="132" text-anchor="middle" fill="#46554f">AudioQuery</text>
+            <text x="780" y="150" text-anchor="middle" fill="#46554f">（音ごとの高さ・長さ）</text>
+
+            <!-- つなぎ -->
+            <line x1="212" y1="95" x2="232" y2="95" stroke="#7b8782" stroke-width="2.5" marker-end="url(#ar4)"/>
+            <line x1="432" y1="95" x2="452" y2="95" stroke="#7b8782" stroke-width="2.5" marker-end="url(#ar4)"/>
+            <line x1="652" y1="95" x2="672" y2="95" stroke="#7b8782" stroke-width="2.5" marker-end="url(#ar4)"/>
+            <path d="M780 172 L780 192 L114 192 L114 208" fill="none" stroke="#7b8782" stroke-width="2.5" marker-end="url(#ar4)"/>
+
+            <!-- 2段目 -->
+            <rect x="16" y="214" width="196" height="150" rx="16" fill="#fdf2d6" stroke="#c98a00" stroke-width="2"/>
+            <circle cx="42" cy="240" r="15" fill="#c98a00"/><text x="42" y="245" text-anchor="middle" fill="#fff" class="code" font-size="14">5</text>
+            <text x="64" y="246" class="h" font-size="16" fill="#8f6200">好みに調整</text>
+            <g stroke="#c98a00" stroke-width="3" stroke-linecap="round"><line x1="40" y1="276" x2="188" y2="276"/><line x1="40" y1="298" x2="188" y2="298"/></g>
+            <circle cx="120" cy="276" r="7" fill="#fff" stroke="#c98a00" stroke-width="2.5"/><circle cx="76" cy="298" r="7" fill="#fff" stroke="#c98a00" stroke-width="2.5"/>
+            <text x="114" y="334" text-anchor="middle" fill="#46554f">アクセント・高さ・</text>
+            <text x="114" y="352" text-anchor="middle" fill="#46554f">長さ・話す速さ など</text>
+
+            <rect x="236" y="214" width="196" height="150" rx="16" fill="#e3edfa" stroke="#2f72c9" stroke-width="2"/>
+            <circle cx="262" cy="240" r="15" fill="#2f72c9"/><text x="262" y="245" text-anchor="middle" fill="#fff" class="code" font-size="14">6</text>
+            <text x="284" y="246" class="h" font-size="16" fill="#1f5297">声を注文</text>
+            <rect x="252" y="268" width="164" height="34" rx="8" fill="#fff"/><text x="334" y="290" text-anchor="middle" fill="#1f5297" class="code" font-size="12">POST /synthesis</text>
+            <text x="334" y="334" text-anchor="middle" fill="#46554f">設計図と声の種類</text>
+            <text x="334" y="352" text-anchor="middle" fill="#46554f">（スタイル）を送る</text>
+
+            <rect x="456" y="214" width="196" height="150" rx="16" fill="#e2f3e9" stroke="#2f9a68" stroke-width="2"/>
+            <circle cx="482" cy="240" r="15" fill="#2f9a68"/><text x="482" y="245" text-anchor="middle" fill="#fff" class="code" font-size="14">7</text>
+            <text x="504" y="246" class="h" font-size="16" fill="#1f7550">音が届く</text>
+            <path d="M476 290 q10 -24 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="#2f9a68" stroke-width="3"/>
+            <text x="554" y="334" text-anchor="middle" fill="#46554f">WAV 形式の音のデータ</text>
+            <text x="554" y="352" text-anchor="middle" fill="#46554f">（少しずつ届くことも）</text>
+
+            <rect x="676" y="214" width="208" height="150" rx="16" fill="#e2f3e9" stroke="#2f9a68" stroke-width="2"/>
+            <circle cx="702" cy="240" r="15" fill="#2f9a68"/><text x="702" y="245" text-anchor="middle" fill="#fff" class="code" font-size="14">8</text>
+            <text x="724" y="246" class="h" font-size="16" fill="#1f7550">鳴らす・保存</text>
+            <path d="M740 274 h16 l18 -14 v52 l-18 -14 h-16z" fill="#2f9a68"/>
+            <path d="M786 274 q10 12 0 24 M796 266 q18 20 0 40" fill="none" stroke="#2f9a68" stroke-width="3" stroke-linecap="round"/>
+            <text x="780" y="334" text-anchor="middle" fill="#46554f">スピーカーで再生、</text>
+            <text x="780" y="352" text-anchor="middle" fill="#46554f">または .wav に書き出し</text>
+
+            <line x1="212" y1="289" x2="232" y2="289" stroke="#7b8782" stroke-width="2.5" marker-end="url(#ar4)"/>
+            <line x1="432" y1="289" x2="452" y2="289" stroke="#7b8782" stroke-width="2.5" marker-end="url(#ar4)"/>
+            <line x1="652" y1="289" x2="672" y2="289" stroke="#7b8782" stroke-width="2.5" marker-end="url(#ar4)"/>
+          </g>
+          <text x="450" y="392" text-anchor="middle" font-size="12.5" fill="#7b8782">設計図はエディターが持っている。話す速さなどの調整は、設計図の数字を書きかえるだけ</text>
+        </svg>
+      </figure>
+      <details class="code-box" open>
+        <summary>コードで見ると：文字が変わったときの記録係<span class="tag">store/audio.ts</span></summary>
+<pre><span class="c">// COMMAND_CHANGE_AUDIO_ITEM_TEXT（とても短くしたもの）</span>
+async action({ state, actions, mutations }, { audioKey, text }) {
+  const query = state.audioItems[audioKey].query;
+  <span class="c">// [メモ] を消し、ルビの読みを使った「読む文」を作る</span>
+  const yomi = extractYomiText(text, { ... });
+
+  if (query != undefined) {
+    <span class="c">// もう設計図があるなら、アクセント句だけ取り直す</span>
+    const accentPhrases = await actions.FETCH_ACCENT_PHRASES({ text: yomi, ... });
+    mutations.COMMAND_CHANGE_AUDIO_ITEM_TEXT({ audioKey, text, accentPhrases });
+  } else {
+    <span class="c">// はじめてなら、設計図をまるごと注文する</span>
+    const query = await actions.FETCH_AUDIO_QUERY({ text, ... });
+    mutations.COMMAND_CHANGE_AUDIO_ITEM_TEXT({ audioKey, text, query });
+  }
+}</pre>
+        <p class="code-note">すでに設計図がある場合は、話す速さなどの調整をそのまま残すために、読み方の部分（アクセント句）だけを取り直します。読みが変わっていなければ、テキストだけを書きかえます。</p>
+      </details>
+    </section>
+
+    <!-- 05 -->
+    <section class="sec" id="accent">
+      <div class="sec-head"><div class="sec-num">05</div><h2>アクセントの設計図</h2></div>
+      <p class="say">エンジンから届く設計図（<code>AudioQuery</code>）は、文を <mark>アクセント句</mark> に分け、さらに <mark>モーラ</mark>（「コ」「ン」のような、1拍ぶんの音）に分けたものです。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 300" role="img" aria-label="AudioQuery がアクセント句とモーラでできている図">
+          <rect x="16" y="16" width="868" height="268" rx="18" fill="#fcfbf7" stroke="#dde4df" stroke-width="2"/>
+          <text x="36" y="46" class="h" font-size="15" fill="#46554f">AudioQuery（1つのテキスト欄ぶんの設計図）</text>
+          <text x="864" y="46" text-anchor="end" font-size="12" fill="#7b8782" class="code">speedScale 1.0 · pitchScale 0.0 · …</text>
+          <!-- アクセント句1 -->
+          <rect x="36" y="62" width="480" height="200" rx="14" fill="#e2f3e9" stroke="#2f9a68" stroke-width="2"/>
+          <text x="54" y="86" class="h" font-size="14" fill="#1f7550">アクセント句 ①　accent = 5</text>
+          <g font-size="13">
+            <g>
+              <rect x="56" y="100" width="80" height="140" rx="10" fill="#fff"/>
+              <text x="96" y="128" text-anchor="middle" class="h" font-size="22">コ</text>
+              <text x="96" y="152" text-anchor="middle" fill="#7b8782" class="code" font-size="11">k + o</text>
+              <rect x="88" y="200" width="16" height="22" rx="4" fill="#2f72c9"/>
+            </g>
+            <g>
+              <rect x="146" y="100" width="80" height="140" rx="10" fill="#fff"/>
+              <text x="186" y="128" text-anchor="middle" class="h" font-size="22">ン</text>
+              <text x="186" y="152" text-anchor="middle" fill="#7b8782" class="code" font-size="11">N</text>
+              <rect x="178" y="180" width="16" height="42" rx="4" fill="#2f72c9"/>
+            </g>
+            <g>
+              <rect x="236" y="100" width="80" height="140" rx="10" fill="#fff"/>
+              <text x="276" y="128" text-anchor="middle" class="h" font-size="22">ニ</text>
+              <text x="276" y="152" text-anchor="middle" fill="#7b8782" class="code" font-size="11">n + i</text>
+              <rect x="268" y="176" width="16" height="46" rx="4" fill="#2f72c9"/>
+            </g>
+            <g>
+              <rect x="326" y="100" width="80" height="140" rx="10" fill="#fff"/>
+              <text x="366" y="128" text-anchor="middle" class="h" font-size="22">チ</text>
+              <text x="366" y="152" text-anchor="middle" fill="#7b8782" class="code" font-size="11">ch + i</text>
+              <rect x="358" y="178" width="16" height="44" rx="4" fill="#2f72c9"/>
+            </g>
+            <g>
+              <rect x="416" y="100" width="80" height="140" rx="10" fill="#fff"/>
+              <text x="456" y="128" text-anchor="middle" class="h" font-size="22">ワ</text>
+              <text x="456" y="152" text-anchor="middle" fill="#7b8782" class="code" font-size="11">w + a</text>
+              <rect x="448" y="182" width="16" height="40" rx="4" fill="#2f72c9"/>
+            </g>
+          </g>
+          <text x="276" y="256" text-anchor="middle" font-size="12" fill="#1f5297">青い棒＝声の高さ（pitch）</text>
+          <!-- 説明 -->
+          <g font-size="14" fill="#46554f">
+            <text x="546" y="96" class="h" font-size="15" fill="#1e2b26">1つのモーラが持つもの</text>
+            <text x="546" y="126"><tspan class="code" fill="#1f7550">text</tspan>　表示する文字（コ）</text>
+            <text x="546" y="152"><tspan class="code" fill="#1f7550">consonant</tspan>　子音（k）と、その長さ</text>
+            <text x="546" y="178"><tspan class="code" fill="#1f7550">vowel</tspan>　母音（o）と、その長さ</text>
+            <text x="546" y="204"><tspan class="code" fill="#1f7550">pitch</tspan>　声の高さ</text>
+            <text x="546" y="242" font-size="13" fill="#7b8782">アクセント句には、モーラの列と</text>
+            <text x="546" y="262" font-size="13" fill="#7b8782">accent（何拍目で下がるか）が入る</text>
+          </g>
+        </svg>
+      </figure>
+      <p class="prose">エディターの「アクセント」欄では、<code>accent</code> の数字だけを変えます。数字を変えると、エディターはエンジンに <code>POST /mora_data</code> を注文して、新しいアクセントに合う高さと長さを計算しなおしてもらいます。</p>
+
+      <div class="play" id="accent-play">
+        <span class="play-label">さわってみよう</span>
+        <p class="prose">言葉を選んで、モーラをクリックしてみよう。クリックした拍の <mark>あとで声が下がる</mark> 線になります（エディターのアクセント欄と同じ描き方）。</p>
+        <div class="chip-row" role="group" aria-label="言葉を選ぶ" id="accent-words"></div>
+        <div class="mora-row" id="accent-moras" role="group" aria-label="アクセントの位置"></div>
+        <svg id="accent-line" viewBox="0 0 400 90" style="width:100%;max-width:380px;height:auto;margin-top:12px" aria-hidden="true"></svg>
+        <div class="out" id="accent-out" aria-live="polite"></div>
+      </div>
+      <details class="code-box" open>
+        <summary>コードで見ると：アクセントの線は「if 文」で決まる<span class="tag">components/Talk/AudioAccent.vue</span></summary>
+<pre><span class="c">// アクセント欄の線を描くところ（短くしたもの）</span>
+<span class="c">// accent は 1 〜 モーラの数。高い拍は y = 5、低い拍は y = 45</span>
+const points = moras.map((mora, index) =&gt; {
+  const isHigh = index + 1 == accent || (index != 0 &amp;&amp; index &lt; accent);
+  return { x: index * 40 + 10, y: isHigh ? 5 : 45 };
+});</pre>
+        <p class="code-note">「1拍目は低い。ただし accent が 1 なら1拍目だけ高い」「2拍目から accent 拍目までは高い」「そのあとは低い」という東京式アクセントのきまりを、1行の条件で書いています。実際の高さの数字（pitch）は、エンジンが計算します。</p>
+      </details>
+    </section>
+
+    <!-- 06 -->
+    <section class="sec" id="engine">
+      <div class="sec-head"><div class="sec-num">06</div><h2>エンジンとの会話</h2></div>
+      <p class="say">エディターとエンジンの会話は、<mark>Web API</mark> です。どんな注文ができるかは、エンジンが公開している説明書（<code>openapi.json</code>）に書いてあります。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 360" role="img" aria-label="起動時と読み上げ時のエディターとエンジンのやりとり">
+          <defs>
+            <marker id="ar6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#2f72c9"/></marker>
+            <marker id="ar6b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#2f9a68"/></marker>
+          </defs>
+          <rect x="70" y="14" width="190" height="42" rx="12" fill="#2f9a68"/><text x="165" y="41" text-anchor="middle" fill="#fff" class="h" font-size="16">エディター</text>
+          <rect x="640" y="14" width="190" height="42" rx="12" fill="#2f72c9"/><text x="735" y="41" text-anchor="middle" fill="#fff" class="h" font-size="16">エンジン</text>
+          <line x1="165" y1="56" x2="165" y2="346" stroke="#dde4df" stroke-width="3"/>
+          <line x1="735" y1="56" x2="735" y2="346" stroke="#dde4df" stroke-width="3"/>
+          <g font-size="13">
+            <rect x="20" y="70" width="110" height="24" rx="12" fill="#fdf2d6"/><text x="75" y="87" text-anchor="middle" fill="#8f6200" class="h">起動したとき</text>
+            <line x1="170" y1="104" x2="728" y2="104" stroke="#2f72c9" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ar6)"/>
+            <text x="450" y="98" text-anchor="middle" fill="#1f5297">GET /version「起きてる？」（返事がなければ 1 秒待って、最大 100 回）</text>
+            <line x1="728" y1="130" x2="172" y2="130" stroke="#2f9a68" stroke-width="2" marker-end="url(#ar6b)"/>
+            <text x="450" y="124" text-anchor="middle" fill="#1f7550">「起きてるよ」→ 状態を READY に</text>
+            <line x1="170" y1="160" x2="728" y2="160" stroke="#2f72c9" stroke-width="2" marker-end="url(#ar6)"/>
+            <text x="450" y="154" text-anchor="middle" fill="#1f5297">GET /engine_manifest・GET /speakers「何ができる？誰がいる？」</text>
+
+            <rect x="20" y="186" width="110" height="24" rx="12" fill="#fbe5ee"/><text x="75" y="203" text-anchor="middle" fill="#a52c5b" class="h">読み上げるとき</text>
+            <line x1="170" y1="222" x2="728" y2="222" stroke="#2f72c9" stroke-width="2" marker-end="url(#ar6)"/>
+            <text x="450" y="216" text-anchor="middle" fill="#1f5297">POST /audio_query「この文の設計図ちょうだい」</text>
+            <line x1="728" y1="248" x2="172" y2="248" stroke="#2f9a68" stroke-width="2" marker-end="url(#ar6b)"/>
+            <text x="450" y="242" text-anchor="middle" fill="#1f7550">AudioQuery（JSON）</text>
+            <line x1="170" y1="282" x2="728" y2="282" stroke="#2f72c9" stroke-width="2" marker-end="url(#ar6)"/>
+            <text x="450" y="276" text-anchor="middle" fill="#1f5297">POST /synthesis「この設計図で声を作って」</text>
+            <line x1="728" y1="308" x2="172" y2="308" stroke="#2f9a68" stroke-width="2" marker-end="url(#ar6b)"/>
+            <text x="450" y="302" text-anchor="middle" fill="#1f7550">WAV（音のデータ）</text>
+            <text x="450" y="340" text-anchor="middle" fill="#7b8782" font-size="12">ほかに /accent_phrases・/mora_data・/user_dict_word（辞書）・/singers（歌手）なども使う</text>
+          </g>
+        </svg>
+      </figure>
+      <div class="cards">
+        <div class="card sky"><div class="icon">📜</div><h4>注文票は自動で作る</h4><p><code>openapi.json</code> から、注文するための TypeScript のコード（<code>src/openapi/</code>）を道具で生成します。手で書かないので、書きまちがいが起きにくいです。</p></div>
+        <div class="card leaf"><div class="icon">🧩</div><h4>エンジンは何個でも</h4><p>VVPP というファイルでエンジンを追加できます。エンジンごとに ID と接続先（ポート）を持っていて、注文のたびに相手を選びます。</p></div>
+        <div class="card stone"><div class="icon">🤖</div><h4>にせものエンジン</h4><p>テストやブラウザ版のために、エディターの中で動く「モックエンジン」も用意されています（<code>src/mock/</code>）。</p></div>
+      </div>
+      <details class="code-box" open>
+        <summary>コードで見ると：エンジンが起きるまで待つ「for 文」<span class="tag">store/engine.ts</span></summary>
+<pre><span class="c">// START_WAITING_ENGINE（短くしたもの）</span>
+for (let i = 0; i &lt; 100; i++) {
+  try {
+    const engine = await actions.INSTANTIATE_ENGINE_CONNECTOR({ engineId });
+    await engine.invoke(<span class="s">"version"</span>)({});   <span class="c">// GET /version</span>
+  } catch {
+    await new Promise((resolve) =&gt; setTimeout(resolve, 1000)); <span class="c">// 1 秒待つ</span>
+    continue;                                             <span class="c">// もう一度</span>
+  }
+  mutations.SET_ENGINE_STATE({ engineId, engineState: <span class="s">"READY"</span> });
+  break;                                                  <span class="c">// 返事が来たら終わり</span>
+}</pre>
+        <p class="code-note">エンジンは起動に少し時間がかかるので、返事が来るまで 1 秒おきに声をかけます。100 回たずねても返事がなければ「起動に失敗した」状態にします。</p>
+      </details>
+    </section>
+
+    <!-- 07 -->
+    <section class="sec" id="undo">
+      <div class="sec-head"><div class="sec-num">07</div><h2>元に戻すしくみ</h2></div>
+      <p class="say">Ctrl+Z で元に戻せるのは、記録係がノートを書きかえるたびに <mark>「どこをどう変えたか」のメモ</mark> を残しているからです。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 290" role="img" aria-label="変更のたびに元に戻すメモと、やり直すメモが積まれる図">
+          <defs><marker id="ar7" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#46554f"/></marker></defs>
+          <!-- ノート -->
+          <rect x="30" y="60" width="200" height="160" rx="14" fill="#fff" stroke="#2f9a68" stroke-width="2.5"/>
+          <text x="130" y="90" text-anchor="middle" class="h" font-size="16" fill="#1f7550">ノート（state）</text>
+          <text x="130" y="128" text-anchor="middle" font-size="14" fill="#46554f">話速</text>
+          <text x="96" y="168" text-anchor="middle" class="h" font-size="26" fill="#7b8782">1.0</text>
+          <text x="130" y="168" text-anchor="middle" font-size="20" fill="#46554f">→</text>
+          <text x="166" y="168" text-anchor="middle" class="h" font-size="26" fill="#2f9a68">1.5</text>
+          <text x="130" y="204" text-anchor="middle" font-size="12" fill="#7b8782">スライダーを動かした</text>
+          <line x1="234" y1="140" x2="316" y2="140" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar7)"/>
+          <text x="275" y="130" text-anchor="middle" font-size="12" fill="#46554f">記録</text>
+          <!-- メモ -->
+          <rect x="322" y="70" width="250" height="140" rx="14" fill="#fdf2d6" stroke="#c98a00" stroke-width="2"/>
+          <text x="447" y="100" text-anchor="middle" class="h" font-size="16" fill="#8f6200">1回ぶんのメモ（Command）</text>
+          <rect x="342" y="116" width="210" height="34" rx="8" fill="#fff"/>
+          <text x="352" y="138" font-size="12.5" fill="#1e2b26" class="code">redo: 話速を 1.5 にする</text>
+          <rect x="342" y="158" width="210" height="34" rx="8" fill="#fff"/>
+          <text x="352" y="180" font-size="12.5" fill="#1e2b26" class="code">undo: 話速を 1.0 にする</text>
+          <line x1="576" y1="140" x2="644" y2="140" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar7)"/>
+          <!-- スタック -->
+          <g>
+            <text x="720" y="40" text-anchor="middle" class="h" font-size="15" fill="#1e2b26">戻す用の山</text>
+            <rect x="660" y="180" width="120" height="30" rx="6" fill="#fdf2d6" stroke="#c98a00"/>
+            <rect x="660" y="146" width="120" height="30" rx="6" fill="#fdf2d6" stroke="#c98a00"/>
+            <rect x="660" y="112" width="120" height="30" rx="6" fill="#fdf2d6" stroke="#c98a00" stroke-width="2.5"/>
+            <text x="720" y="132" text-anchor="middle" font-size="12" fill="#8f6200">いまのメモ</text>
+            <text x="720" y="236" text-anchor="middle" font-size="12" fill="#7b8782">Ctrl+Z で上から使う</text>
+          </g>
+          <g>
+            <text x="840" y="40" text-anchor="middle" class="h" font-size="15" fill="#1e2b26">やり直す山</text>
+            <rect x="800" y="180" width="80" height="30" rx="6" fill="#fff" stroke="#dde4df" stroke-dasharray="5 4"/>
+            <text x="840" y="236" text-anchor="middle" font-size="12" fill="#7b8782">新しく変えたら</text>
+            <text x="840" y="254" text-anchor="middle" font-size="12" fill="#7b8782">空になる</text>
+          </g>
+          <text x="450" y="282" text-anchor="middle" font-size="12.5" fill="#46554f">トーク用とソング用で、山は別々に持っている</text>
+        </svg>
+      </figure>
+      <details class="code-box" open>
+        <summary>コードで見ると：変更を「パッチ」として記録する<span class="tag">store/command.ts</span></summary>
+<pre><span class="c">// createCommandMutation（短くしたもの）</span>
+(state, payload) =&gt; {
+  <span class="c">// immer で「変更」と「その逆の変更」を同時に作る</span>
+  const [, redoPatches, undoPatches] = immer.produceWithPatches(
+    state,
+    (draft) =&gt; recipe(draft, payload),
+  );
+  applyPatches(state, redoPatches);               <span class="c">// 変更する</span>
+  state.undoCommands[editor].push({ redoPatches, undoPatches }); <span class="c">// 山に積む</span>
+  state.redoCommands[editor].splice(0);           <span class="c">// やり直す山は空に</span>
+};</pre>
+        <p class="code-note">名前が <code>COMMAND_</code> で始まる変更は、すべてこのしくみを通ります。Ctrl+Z では山のいちばん上のメモから <code>undoPatches</code> を取り出して当てるだけです。</p>
+      </details>
+    </section>
+
+    <!-- 08 -->
+    <section class="sec" id="fast">
+      <div class="sec-head"><div class="sec-num">08</div><h2>すぐ鳴らす工夫</h2></div>
+      <p class="say">再生ボタンを押してから音が出るまでを短くするために、<mark>作った声をとっておく</mark> ことと、<mark>できたところから鳴らす</mark> ことをしています。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 300" role="img" aria-label="キャッシュとストリーミング再生の図">
+          <defs><marker id="ar8" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#46554f"/></marker></defs>
+          <!-- キャッシュ -->
+          <rect x="20" y="20" width="420" height="260" rx="18" fill="#e2f3e9"/>
+          <text x="40" y="52" class="h" font-size="17" fill="#1f7550">① とっておく（キャッシュ）</text>
+          <rect x="44" y="76" width="150" height="56" rx="10" fill="#fff" stroke="#2f9a68" stroke-width="2"/>
+          <text x="119" y="100" text-anchor="middle" font-size="13" fill="#1e2b26">設計図 ＋ 声の種類</text>
+          <text x="119" y="120" text-anchor="middle" font-size="11.5" fill="#7b8782">から ID を作る</text>
+          <line x1="198" y1="104" x2="250" y2="104" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar8)"/>
+          <rect x="256" y="66" width="164" height="132" rx="12" fill="#fff" stroke="#2f9a68" stroke-width="2"/>
+          <text x="338" y="88" text-anchor="middle" font-size="13" class="h" fill="#1f7550">声の引き出し</text>
+          <g fill="#cfe8da"><rect x="272" y="98" width="132" height="18" rx="4"/><rect x="272" y="122" width="132" height="18" rx="4"/><rect x="272" y="146" width="132" height="18" rx="4"/></g>
+          <rect x="272" y="122" width="132" height="18" rx="4" fill="#2f9a68"/>
+          <text x="338" y="136" text-anchor="middle" font-size="11" fill="#fff" class="code">ID が同じ → これ！</text>
+          <text x="338" y="186" text-anchor="middle" font-size="11.5" fill="#7b8782">最大 256 個</text>
+          <text x="230" y="228" text-anchor="middle" font-size="13" fill="#46554f">同じ設計図なら、エンジンに注文せず</text>
+          <text x="230" y="248" text-anchor="middle" font-size="13" fill="#46554f">引き出しの声をそのまま鳴らす</text>
+          <!-- ストリーミング -->
+          <rect x="460" y="20" width="420" height="260" rx="18" fill="#e3edfa"/>
+          <text x="480" y="52" class="h" font-size="17" fill="#1f5297">② できたところから鳴らす</text>
+          <text x="480" y="84" font-size="13" fill="#46554f">ふつう：ぜんぶできてから鳴らす</text>
+          <rect x="480" y="94" width="380" height="26" rx="6" fill="#fff" stroke="#2f72c9" stroke-width="1.5"/>
+          <text x="670" y="112" text-anchor="middle" font-size="12" fill="#1f5297">「こんにちは今日はいい天気ですね」</text>
+          <text x="480" y="152" font-size="13" fill="#46554f">ストリーミング：少しずつ届いたぶんから鳴らす</text>
+          <g>
+            <rect x="480" y="162" width="88" height="26" rx="6" fill="#2f72c9"/><text x="524" y="180" text-anchor="middle" font-size="11.5" fill="#fff">こんにち</text>
+            <rect x="572" y="162" width="88" height="26" rx="6" fill="#5b8fd6"/><text x="616" y="180" text-anchor="middle" font-size="11.5" fill="#fff">は今日は</text>
+            <rect x="664" y="162" width="88" height="26" rx="6" fill="#8fb3e6"/><text x="708" y="180" text-anchor="middle" font-size="11.5" fill="#fff">いい天気</text>
+            <rect x="756" y="162" width="104" height="26" rx="6" fill="#fff" stroke="#8fb3e6" stroke-dasharray="4 3"/><text x="808" y="180" text-anchor="middle" font-size="11.5" fill="#7b8782">ですね…</text>
+          </g>
+          <text x="670" y="224" text-anchor="middle" font-size="13" fill="#46554f">1回に届ける長さは設定で選べる</text>
+          <text x="670" y="248" text-anchor="middle" font-size="12" fill="#7b8782" class="code">0.3 秒 / 1.0 秒 / ぜんぶ</text>
+        </svg>
+        <figcaption>ストリーミングはエンジンが対応しているときだけ使います。届いた音は「鳴らす用」と「引き出し用」の2本に分けて、両方に流します。</figcaption>
+      </figure>
+      <details class="code-box" open>
+        <summary>コードで見ると：引き出しを先に見る<span class="tag">store/audio.ts</span></summary>
+<pre><span class="c">// PREPARE_AUDIO_FOR_PLAYBACK（短くしたもの）</span>
+const { id: cacheKey, audioQuery } = await generateUniqueIdAndQuery(state, audioItem);
+const cached = audioCache.get(cacheKey);
+if (cached) return cached.wav.stream();        <span class="c">// あれば注文しない</span>
+
+const segmentLength = { LOW_LATENCY: 0.3, BALANCED: 1.0, STABLE: 9999 }[state.streamingMode];
+const response = await engine.invoke(<span class="s">"streamingSynthesisRaw"</span>)({ audioQuery, speaker, segmentLength });
+
+<span class="c">// 届いた音を2本に分ける：1本は鳴らす用、もう1本は引き出し用</span>
+const [stream, cacheStream] = response.raw.body.tee();</pre>
+      </details>
+    </section>
+
+    <!-- 09 -->
+    <section class="sec" id="song">
+      <div class="sec-head"><div class="sec-num">09</div><h2>歌わせるしくみ</h2></div>
+      <p class="say">ソングでは、楽譜の音符（ノート）を <mark>休符のところで区切って「フレーズ」</mark> にし、フレーズごとに 4つの注文をしてから歌声を作ります。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 360" role="img" aria-label="ノートをフレーズに分け、4段階で歌声を作る図">
+          <defs><marker id="ar9" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#46554f"/></marker></defs>
+          <!-- ピアノロール -->
+          <rect x="20" y="20" width="860" height="130" rx="14" fill="#fcfbf7" stroke="#dde4df" stroke-width="2"/>
+          <g stroke="#eef0f2"><line x1="20" y1="52" x2="880" y2="52"/><line x1="20" y1="84" x2="880" y2="84"/><line x1="20" y1="116" x2="880" y2="116"/></g>
+          <g fill="#2f9a68">
+            <rect x="50" y="88" width="70" height="22" rx="6"/><rect x="124" y="70" width="70" height="22" rx="6"/><rect x="198" y="56" width="110" height="22" rx="6"/>
+          </g>
+          <g fill="#c98a00">
+            <rect x="420" y="100" width="70" height="22" rx="6"/><rect x="494" y="84" width="70" height="22" rx="6"/><rect x="568" y="70" width="70" height="22" rx="6"/><rect x="642" y="84" width="90" height="22" rx="6"/>
+          </g>
+          <g font-size="12" fill="#fff" class="h">
+            <text x="85" y="104" text-anchor="middle">ど</text><text x="159" y="86" text-anchor="middle">れ</text><text x="253" y="72" text-anchor="middle">み</text>
+            <text x="455" y="116" text-anchor="middle">ふぁ</text><text x="529" y="100" text-anchor="middle">そ</text><text x="603" y="86" text-anchor="middle">ら</text><text x="687" y="100" text-anchor="middle">し</text>
+          </g>
+          <text x="364" y="96" text-anchor="middle" font-size="12" fill="#7b8782">休符</text>
+          <rect x="44" y="30" width="270" height="110" rx="10" fill="none" stroke="#2f9a68" stroke-width="2" stroke-dasharray="6 4"/>
+          <rect x="414" y="30" width="324" height="110" rx="10" fill="none" stroke="#c98a00" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="179" y="46" text-anchor="middle" font-size="12" class="h" fill="#1f7550">フレーズ A</text>
+          <text x="576" y="46" text-anchor="middle" font-size="12" class="h" fill="#8f6200">フレーズ B</text>
+          <line x1="560" y1="20" x2="560" y2="150" stroke="#d2457a" stroke-width="2.5"/>
+          <text x="566" y="144" font-size="11" fill="#a52c5b">再生位置</text>
+          <!-- 4段階 -->
+          <g font-size="13">
+            <rect x="20" y="186" width="190" height="96" rx="14" fill="#e3edfa"/>
+            <text x="115" y="214" text-anchor="middle" class="h" font-size="15" fill="#1f5297">① 音の長さ</text>
+            <text x="115" y="238" text-anchor="middle" fill="#46554f">どの音素をいつ鳴らすか</text>
+            <text x="115" y="262" text-anchor="middle" fill="#7b8782" class="code" font-size="10.5">sing_frame_audio_query</text>
+            <line x1="212" y1="234" x2="236" y2="234" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar9)"/>
+            <rect x="240" y="186" width="190" height="96" rx="14" fill="#efe9fa"/>
+            <text x="335" y="214" text-anchor="middle" class="h" font-size="15" fill="#5a3ea0">② 歌の高さ</text>
+            <text x="335" y="238" text-anchor="middle" fill="#46554f">ピッチの細かい動き</text>
+            <text x="335" y="262" text-anchor="middle" fill="#7b8782" class="code" font-size="10.5">sing_frame_f0</text>
+            <line x1="432" y1="234" x2="456" y2="234" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar9)"/>
+            <rect x="460" y="186" width="190" height="96" rx="14" fill="#fdf2d6"/>
+            <text x="555" y="214" text-anchor="middle" class="h" font-size="15" fill="#8f6200">③ 歌の大きさ</text>
+            <text x="555" y="238" text-anchor="middle" fill="#46554f">声の強さの動き</text>
+            <text x="555" y="262" text-anchor="middle" fill="#7b8782" class="code" font-size="10.5">sing_frame_volume</text>
+            <line x1="652" y1="234" x2="676" y2="234" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar9)"/>
+            <rect x="680" y="186" width="200" height="96" rx="14" fill="#e2f3e9"/>
+            <text x="780" y="214" text-anchor="middle" class="h" font-size="15" fill="#1f7550">④ 歌声</text>
+            <text x="780" y="238" text-anchor="middle" fill="#46554f">①〜③から声を作る</text>
+            <text x="780" y="262" text-anchor="middle" fill="#7b8782" class="code" font-size="10.5">frame_synthesis</text>
+          </g>
+          <text x="450" y="314" text-anchor="middle" font-size="13" fill="#46554f">どの段階の結果もとっておくので、ノートを1つ動かしても、変わったフレーズだけ作りなおす</text>
+          <text x="450" y="338" text-anchor="middle" font-size="13" fill="#a52c5b">待っているフレーズが複数あるときは、再生位置に近いものから先に作る</text>
+        </svg>
+      </figure>
+      <div class="cards">
+        <div class="card leaf"><div class="icon">📸</div><h4>スナップショット</h4><p>作っている最中に楽譜が変わっても混乱しないように、作りはじめる前に楽譜の写しをとって、それをもとに作ります。</p></div>
+        <div class="card sky"><div class="icon">🎚️</div><h4>手で直したところ</h4><p>ピッチや音量を手で描きかえたところは、エンジンが作った値の上に重ねて使います。</p></div>
+        <div class="card sun"><div class="icon">🎹</div><h4>鳴らすのはブラウザ</h4><p>できた歌声は Web Audio API で並べて鳴らします。トラックごとの音量や左右のバランスもここで調整します。</p></div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="sec" id="save">
+      <div class="sec-head"><div class="sec-num">10</div><h2>保存と書き出し</h2></div>
+      <p class="say">作業の保存は <mark>プロジェクトファイル（.vvproj）</mark>、声の保存は <mark>音声ファイル（.wav）</mark> です。プロジェクトファイルの中身は、トークとソングの両方が入った JSON です。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 260" role="img" aria-label="プロジェクトファイルと設定ファイルと音声ファイルの中身">
+          <rect x="20" y="20" width="300" height="220" rx="16" fill="#fff" stroke="#2f9a68" stroke-width="2.5"/>
+          <path d="M280 20 h40 v40 z" fill="#e2f3e9"/>
+          <text x="40" y="52" class="h" font-size="16" fill="#1f7550">作品.vvproj</text>
+          <g font-size="13" class="code" fill="#46554f">
+            <text x="40" y="84">appVersion</text>
+            <text x="40" y="112">talk</text><text x="60" y="134" fill="#7b8782">audioKeys（並び順）</text><text x="60" y="154" fill="#7b8782">audioItems（各欄）</text>
+            <text x="40" y="182">song</text><text x="60" y="204" fill="#7b8782">tempos・timeSignatures</text><text x="60" y="224" fill="#7b8782">tracks（ノート・歌手）</text>
+          </g>
+          <rect x="340" y="20" width="250" height="220" rx="16" fill="#fff" stroke="#c98a00" stroke-width="2.5"/>
+          <text x="360" y="52" class="h" font-size="16" fill="#8f6200">config.json</text>
+          <g font-size="13" fill="#46554f">
+            <text x="360" y="84">アプリの設定</text>
+            <text x="360" y="110" fill="#7b8782">・書き出しの設定</text>
+            <text x="360" y="134" fill="#7b8782">・キー割り当て</text>
+            <text x="360" y="158" fill="#7b8782">・プリセット</text>
+            <text x="360" y="182" fill="#7b8782">・エンジンごとの設定</text>
+            <text x="360" y="218" font-size="12">裏方係がユーザーフォルダに保存</text>
+          </g>
+          <rect x="610" y="20" width="270" height="220" rx="16" fill="#fff" stroke="#d2457a" stroke-width="2.5"/>
+          <text x="630" y="52" class="h" font-size="16" fill="#a52c5b">書き出すもの</text>
+          <g font-size="13" fill="#46554f">
+            <text x="630" y="86"><tspan class="code" fill="#a52c5b">.wav</tspan>　声</text>
+            <text x="630" y="114"><tspan class="code" fill="#a52c5b">.txt</tspan>　読み上げた文（選べる）</text>
+            <text x="630" y="142"><tspan class="code" fill="#a52c5b">.lab</tspan>　音素のタイミング（選べる）</text>
+            <text x="630" y="184" font-size="12.5">1つずつ・全部・つなげて1本、</text>
+            <text x="630" y="206" font-size="12.5">ソングならトラックごとにも</text>
+          </g>
+        </svg>
+      </figure>
+      <p class="prose">プロジェクトファイルは古いバージョンで作ったものも読めるように、読みこむときに<mark>今の形へ順番に変換</mark>（マイグレーション）してから使います。</p>
+
+      <div class="play" id="filename-play">
+        <span class="play-label">さわってみよう</span>
+        <p class="prose">書き出すファイルの名前は、タグを使ったパターンで決められます（設定 → 書き出しファイル名パターン）。エディターと同じきまりで名前を作ってみよう。</p>
+        <label class="prose" for="fn-pattern" style="display:block;margin-top:10px;font-weight:700">ファイル名パターン</label>
+        <input type="text" id="fn-pattern" value="$連番$_$キャラ$（$スタイル$）_$テキスト$" maxlength="128" spellcheck="false">
+        <div class="chip-row" id="fn-tags" role="group" aria-label="タグを足す"></div>
+        <label class="prose" for="fn-text" style="display:block;font-weight:700">テキスト欄の文</label>
+        <input type="text" id="fn-text" value="今日の天気は晴れのち曇りです" spellcheck="false">
+        <div class="out" id="fn-out" aria-live="polite"></div>
+        <p class="prose" style="font-size:13.5px;margin-top:8px">テキストは 10 文字をこえると 9 文字＋「…」に切りつめられます。ファイル名に使えない記号（<code>\ / : * ? " &lt; &gt; |</code> など）は消されます。<code>$連番$</code> はかならず必要です。</p>
+      </div>
+      <details class="code-box" open>
+        <summary>コードで見ると：タグの置きかえは正規表現 1 本<span class="tag">store/utility.ts</span></summary>
+<pre><span class="c">// replaceTag（短くしたもの）</span>
+<span class="c">// $テキスト$ のような「$ と $ にはさまれた部分」を探して置きかえる</span>
+template.replace(<span class="s">/\$(.+?)\$/g</span>, (match, tagName) =&gt; {
+  const tagId = replaceTagStringToTagId[tagName];  <span class="c">// "テキスト" → "text"</span>
+  if (tagId == undefined) return match;            <span class="c">// 知らないタグはそのまま</span>
+  return replacer[tagId] ?? <span class="s">""</span>;
+});</pre>
+        <p class="code-note">知らないタグはそのまま残るので、設定画面は「できあがった名前に $ が残っていたらエラー」と判定しています。</p>
+      </details>
+    </section>
+
+    <!-- 11 -->
+    <section class="sec" id="safety">
+      <div class="sec-head"><div class="sec-num">11</div><h2>安全のしくみ</h2></div>
+      <p class="say">画面の部分は Web の技術で動いているので、<mark>画面からパソコンを自由にさわれない</mark> ように、裏方係との間に「受付」をはさんでいます。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 290" role="img" aria-label="画面と裏方の間に受付があり、決められたお願いだけを通す図">
+          <defs><marker id="ar11" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#46554f"/></marker></defs>
+          <rect x="20" y="30" width="270" height="210" rx="18" fill="#fbe5ee" stroke="#d2457a" stroke-width="2.5"/>
+          <text x="155" y="62" text-anchor="middle" class="h" font-size="17" fill="#a52c5b">画面（レンダラー）</text>
+          <text x="155" y="90" text-anchor="middle" font-size="13" fill="#46554f">ファイルや OS には</text>
+          <text x="155" y="110" text-anchor="middle" font-size="13" fill="#46554f">直接さわれない</text>
+          <rect x="60" y="134" width="190" height="34" rx="8" fill="#fff"/><text x="155" y="156" text-anchor="middle" font-size="12.5" class="code" fill="#a52c5b">window.backend.writeFile()</text>
+          <rect x="60" y="178" width="190" height="34" rx="8" fill="#fff"/><text x="155" y="200" text-anchor="middle" font-size="12.5" class="code" fill="#a52c5b">window.backend.readFile()</text>
+          <!-- 受付 -->
+          <rect x="350" y="70" width="200" height="130" rx="18" fill="#eef0f2" stroke="#5b6670" stroke-width="2.5"/>
+          <text x="450" y="102" text-anchor="middle" class="h" font-size="17" fill="#5b6670">受付（preload）</text>
+          <text x="450" y="130" text-anchor="middle" font-size="13" fill="#46554f">決められたお願いの</text>
+          <text x="450" y="150" text-anchor="middle" font-size="13" fill="#46554f">一覧だけを公開</text>
+          <text x="450" y="182" text-anchor="middle" font-size="11.5" class="code" fill="#7b8782">contextBridge</text>
+          <line x1="294" y1="150" x2="344" y2="150" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar11)"/>
+          <line x1="554" y1="135" x2="604" y2="135" stroke="#46554f" stroke-width="2.5" marker-end="url(#ar11)"/>
+          <text x="579" y="125" text-anchor="middle" font-size="11" fill="#46554f">IPC</text>
+          <rect x="610" y="30" width="270" height="210" rx="18" fill="#fdf2d6" stroke="#c98a00" stroke-width="2.5"/>
+          <text x="745" y="62" text-anchor="middle" class="h" font-size="17" fill="#8f6200">裏方（メインプロセス）</text>
+          <text x="745" y="96" text-anchor="middle" font-size="13" fill="#46554f">ファイル・設定・エンジン</text>
+          <text x="745" y="116" text-anchor="middle" font-size="13" fill="#46554f">をあつかえる</text>
+          <rect x="640" y="140" width="210" height="76" rx="10" fill="#fff"/>
+          <text x="745" y="164" text-anchor="middle" font-size="12.5" fill="#8f6200">リンク → いつものブラウザで</text>
+          <text x="745" y="186" text-anchor="middle" font-size="12.5" fill="#8f6200">（http・https だけ）</text>
+          <text x="745" y="206" text-anchor="middle" font-size="12.5" fill="#8f6200">画面の移動 → 止める</text>
+          <text x="450" y="276" text-anchor="middle" font-size="13" fill="#46554f">エラーも受付を通れる形（TransferableResult）に包んで受けわたす</text>
+        </svg>
+      </figure>
+      <div class="cards">
+        <div class="card stone"><div class="icon">🔒</div><h4>アプリの鍵（Fuses）</h4><p>配布するアプリでは、Node.js として動かすモードや、外からデバッグ用の設定を入れるしくみを、ビルドのときに切っておきます。</p></div>
+        <div class="card berry"><div class="icon">🧭</div><h4>知らない場所に行かない</h4><p>画面の中のリンクは、http か https のときだけいつものブラウザで開きます。アプリの画面がほかのページに移動することはありません。</p></div>
+        <div class="card leaf"><div class="icon">🧪</div><h4>テストで見張る</h4><p>部品ごとのテスト（Vitest）、アプリを実際に操作するテスト（Playwright）、画面の見た目の比較を、変更のたびに自動で動かします。</p></div>
+      </div>
+      <details class="code-box" open>
+        <summary>コードで見ると：リンクの開き方を決めているところ<span class="tag">backend/electron/main.ts</span></summary>
+<pre><span class="c">// 短くしたもの</span>
+contents.setWindowOpenHandler(({ url }) =&gt; {
+  const { protocol } = new URL(url);
+  if (protocol.match(<span class="s">/^https?:/</span>)) {
+    void shell.openExternal(url);   <span class="c">// いつものブラウザで開く</span>
+  }
+  return { action: <span class="s">"deny"</span> };         <span class="c">// アプリの中には新しい窓を作らない</span>
+});
+
+contents.on(<span class="s">"will-navigate"</span>, (event) =&gt; {
+  <span class="c">// 開発中の再読みこみ（同じ URL）以外の移動は止める</span>
+  if (contents.getURL() !== event.url) event.preventDefault();
+});</pre>
+      </details>
+    </section>
+
+    <!-- 12 -->
+    <section class="sec" id="tools">
+      <div class="sec-head"><div class="sec-num">12</div><h2>使っている道具</h2></div>
+      <div class="cards">
+        <div class="card sky"><div class="icon">🟦</div><h4>TypeScript</h4><p>プログラムの言語。型でまちがいを早く見つける</p></div>
+        <div class="card leaf"><div class="icon">🖼️</div><h4>Vue 3 ・ Quasar</h4><p>画面を部品で組み立てる</p></div>
+        <div class="card leaf"><div class="icon">📒</div><h4>Vuex ・ immer</h4><p>状態の管理と、元に戻すためのパッチ</p></div>
+        <div class="card sun"><div class="icon">🪟</div><h4>Electron</h4><p>Web の技術でデスクトップアプリを作る</p></div>
+        <div class="card stone"><div class="icon">✅</div><h4>Zod</h4><p>ファイルや設定の中身が正しい形かを確かめる</p></div>
+        <div class="card plum"><div class="icon">🎨</div><h4>PixiJS</h4><p>ソングの波形やピッチの線をすばやく描く</p></div>
+        <div class="card sky"><div class="icon">📜</div><h4>OpenAPI Generator</h4><p>エンジンへの注文のコードを自動で作る</p></div>
+        <div class="card sun"><div class="icon">⚡</div><h4>Vite</h4><p>開発用サーバーとビルド</p></div>
+        <div class="card stone"><div class="icon">📦</div><h4>electron-builder</h4><p>インストーラーや AppImage を作る</p></div>
+        <div class="card berry"><div class="icon">🧪</div><h4>Vitest ・ Playwright</h4><p>部品のテストと、アプリを操作するテスト</p></div>
+        <div class="card plum"><div class="icon">📚</div><h4>Storybook</h4><p>部品を1つずつ表示して見た目を確かめる</p></div>
+        <div class="card leaf"><div class="icon">🎼</div><h4>UtaFormatix</h4><p>ほかの歌声ソフトの楽譜を読みこむ</p></div>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section class="sec" id="words">
+      <div class="sec-head"><div class="sec-num">13</div><h2>ことば</h2></div>
+      <dl class="glossary">
+        <div><dt>エディター</dt><dd>画面を表示して操作を受けとるプログラム。このリポジトリ</dd></div>
+        <div><dt>エンジン</dt><dd>文や楽譜を受けとって声を作る Web サーバー</dd></div>
+        <div><dt>AudioQuery</dt><dd>声を作るための設計図。アクセント句の列と、話速などの調整値</dd></div>
+        <div><dt>アクセント句</dt><dd>ひとまとまりの高低で読まれる区切り。モーラの列とアクセント位置を持つ</dd></div>
+        <div><dt>モーラ</dt><dd>1拍ぶんの音。「コ」「ン」「ニ」など。子音・母音・高さを持つ</dd></div>
+        <div><dt>スタイル</dt><dd>同じキャラクターの声の種類（ノーマル・あまあま など）</dd></div>
+        <div><dt>ストア（Vuex）</dt><dd>アプリの状態と、それを変える処理を集めた場所</dd></div>
+        <div><dt>メインプロセス</dt><dd>Electron で最初に動くプログラム。ファイルやエンジンをあつかう</dd></div>
+        <div><dt>レンダラープロセス</dt><dd>ウィンドウの中身を表示するプログラム。Vue が動く</dd></div>
+        <div><dt>IPC</dt><dd>メインプロセスとレンダラープロセスの間の連絡</dd></div>
+        <div><dt>キャッシュ</dt><dd>一度作ったものをとっておき、次から使い回すこと</dd></div>
+        <div><dt>ストリーミング</dt><dd>データを少しずつ受けとり、届いたぶんから使うこと</dd></div>
+        <div><dt>フレーズ</dt><dd>ソングで、休符で区切った音符のまとまり。歌声を作る単位</dd></div>
+        <div><dt>VVPP</dt><dd>エンジンを追加するためのファイル形式</dd></div>
+        <div><dt>マイグレーション</dt><dd>古い形のデータを、新しい形に順番に変換すること</dd></div>
+        <div><dt>モック</dt><dd>テスト用のにせもの。本物のエンジンのかわりに使う</dd></div>
+      </dl>
+      <footer class="foot">
+        この資料は VOICEVOX の公式資料ではありません。オープンソースで公開されている <a href="https://github.com/VOICEVOX/voicevox">VOICEVOX/voicevox</a>（このページはフォーク Syogo-Suganoya/voicevox の main ブランチ）のソースコードと、リポジトリ内のドキュメント（<code>docs/</code>）を読んでまとめたものです。内容の正確さは保証できず、最新のコードとちがう場合があります。
+      </footer>
+    </section>
+  </main>
+</div>
+
+<script>
+// VOICEVOX 解説資料 共通スクリプト
+(() => {
+  // 目次：いま読んでいる節をハイライトする
+  const tocLinks = [...document.querySelectorAll(".toc a[href^='#']")];
+  const sections = tocLinks
+    .map((a) => document.querySelector(a.getAttribute("href")))
+    .filter(Boolean);
+  if (sections.length > 0 && "IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const id = `#${entry.target.id}`;
+          for (const a of tocLinks) {
+            a.classList.toggle("active", a.getAttribute("href") === id);
+          }
+        }
+      },
+      { rootMargin: "-30% 0px -60% 0px" },
+    );
+    for (const section of sections) observer.observe(section);
+  }
+
+  // スマホ用の目次（select）
+  const mobileToc = document.querySelector(".toc-mobile select");
+  if (mobileToc) {
+    mobileToc.addEventListener("change", () => {
+      const target = document.querySelector(mobileToc.value);
+      if (target) target.scrollIntoView({ behavior: "smooth" });
+    });
+  }
+
+  // パスをクリックでコピー
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.setAttribute("role", "status");
+  document.body.append(toast);
+  let toastTimer;
+  const showToast = (text) => {
+    toast.textContent = text;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 1400);
+  };
+  document.addEventListener("click", async (event) => {
+    const button = event.target.closest("button.path");
+    if (!button) return;
+    const text = button.dataset.copy ?? button.textContent.trim();
+    try {
+      await navigator.clipboard.writeText(text);
+      button.classList.add("copied");
+      setTimeout(() => button.classList.remove("copied"), 1200);
+      showToast(`コピーしました：${text}`);
+    } catch {
+      showToast("コピーできませんでした");
+    }
+  });
+
+  // 表の絞りこみ検索
+  for (const input of document.querySelectorAll("input.search[data-target]")) {
+    const table = document.querySelector(input.dataset.target);
+    if (!table) continue;
+    const rows = [...table.querySelectorAll("tbody tr")];
+    const empty = document.querySelector(input.dataset.empty);
+    input.addEventListener("input", () => {
+      const words = input.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      let shown = 0;
+      for (const row of rows) {
+        const text = row.textContent.toLowerCase();
+        const hit = words.every((word) => text.includes(word));
+        row.hidden = !hit;
+        if (hit) shown++;
+      }
+      if (empty) empty.style.display = shown === 0 ? "block" : "none";
+    });
+  }
+})();
+</script>
+<script>
+// 05：アクセントをさわってみよう
+(() => {
+  const words = [
+    { label: "コンニチワ", moras: ["コ", "ン", "ニ", "チ", "ワ"], accent: 5 },
+    { label: "アメ（雨）", moras: ["ア", "メ"], accent: 1 },
+    { label: "アメ（飴）", moras: ["ア", "メ"], accent: 2 },
+    { label: "オトウト", moras: ["オ", "ト", "ウ", "ト"], accent: 4 },
+    { label: "ミズウミ", moras: ["ミ", "ズ", "ウ", "ミ"], accent: 3 },
+  ];
+  const wordRow = document.getElementById("accent-words");
+  const moraRow = document.getElementById("accent-moras");
+  const line = document.getElementById("accent-line");
+  const out = document.getElementById("accent-out");
+  let current = { ...words[0] };
+
+  const render = () => {
+    moraRow.replaceChildren();
+    current.moras.forEach((mora, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "mora-btn";
+      button.textContent = mora;
+      button.setAttribute("aria-pressed", String(index + 1 === current.accent));
+      button.setAttribute("aria-label", `${index + 1}拍目「${mora}」をアクセントにする`);
+      button.addEventListener("click", () => {
+        current.accent = index + 1;
+        render();
+      });
+      moraRow.append(button);
+    });
+
+    // AudioAccent.vue と同じきまりで高低を決める
+    const n = current.moras.length;
+    const points = current.moras.map((_, index) => {
+      const isHigh = index + 1 === current.accent || (index !== 0 && index < current.accent);
+      return { x: 30 + index * 80, y: isHigh ? 20 : 70, isHigh };
+    });
+    const width = 60 + (n - 1) * 80;
+    line.setAttribute("viewBox", `0 0 ${Math.max(width, 200)} 90`);
+    const path = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x} ${p.y}`).join(" ");
+    line.innerHTML =
+      `<path d="${path}" fill="none" stroke="#2f72c9" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>` +
+      points.map((p, i) =>
+        `<circle cx="${p.x}" cy="${p.y}" r="9" fill="${i + 1 === current.accent ? "#d2457a" : "#fff"}" stroke="#2f72c9" stroke-width="3"/>` +
+        `<text x="${p.x}" y="${p.y + (p.isHigh ? -12 : 26) }" text-anchor="middle" font-size="13" fill="#46554f">${current.moras[i]}</text>`
+      ).join("");
+
+    const pattern = points.map((p) => (p.isHigh ? "高" : "低")).join(" ");
+    const drop = current.accent === n ? "句の中では下がらない＝平板" : `${current.accent}拍目のあとで下がる`;
+    out.textContent = `accent = ${current.accent}　→　${pattern}　（${drop}）`;
+  };
+
+  words.forEach((word, i) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    chip.textContent = word.label;
+    chip.setAttribute("aria-pressed", String(i === 0));
+    chip.addEventListener("click", () => {
+      current = { ...word, moras: [...word.moras] };
+      for (const c of wordRow.children) c.setAttribute("aria-pressed", String(c === chip));
+      render();
+    });
+    wordRow.append(chip);
+  });
+  render();
+})();
+
+// 10：ファイル名パターンをさわってみよう（store/utility.ts と同じきまり）
+(() => {
+  const tagIdByName = { 連番: "index", キャラ: "characterName", スタイル: "styleName", テキスト: "text", 日付: "date", プロジェクト名: "projectName" };
+  const sanitize = (s) => s.replace(/[\x00-\x1f\x22\x2a\x2f\x3a\x3c\x3e\x3f\x5c\x7c\x7f]/g, "");
+  const today = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  })();
+  const pattern = document.getElementById("fn-pattern");
+  const textInput = document.getElementById("fn-text");
+  const out = document.getElementById("fn-out");
+  const tagRow = document.getElementById("fn-tags");
+
+  const build = () => {
+    let text = sanitize(textInput.value);
+    if (text.length > 10) text = text.substring(0, 9) + "…";
+    const values = { index: "001", characterName: "キャラA", styleName: "ノーマル", text, date: today, projectName: "わたしのプロジェクト" };
+    const template = pattern.value;
+    const name = template.replace(/\$(.+?)\$/g, (match, tagName) => {
+      const id = tagIdByName[tagName];
+      return id == undefined ? match : values[id] ?? "";
+    });
+
+    const errors = [];
+    if (template === "") errors.push("何か入力してください");
+    const sanitized = sanitize(template);
+    const bad = Array.from(template).find((c, i) => c !== sanitized[i]);
+    if (template !== "" && bad != undefined) errors.push(`使用できない文字が含まれています：「${bad}」`);
+    if (template !== "" && name.includes("$")) errors.push("不正なタグが存在するか、$が単体で含まれています");
+    if (template !== "" && !template.includes("連番")) errors.push("$連番$は必須です");
+
+    if (errors.length > 0) {
+      out.className = "out err";
+      out.textContent = errors.join("、");
+    } else {
+      out.className = "out";
+      out.textContent = `${name}.wav`;
+    }
+  };
+
+  for (const tagName of Object.keys(tagIdByName)) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    chip.textContent = `$${tagName}$`;
+    chip.addEventListener("click", () => {
+      const tag = `$${tagName}$`;
+      const from = pattern.selectionStart ?? pattern.value.length;
+      const to = pattern.selectionEnd ?? from;
+      if (pattern.value.length + tag.length > 128) return;
+      pattern.value = pattern.value.slice(0, from) + tag + pattern.value.slice(to);
+      pattern.focus();
+      pattern.setSelectionRange(from + tag.length, from + tag.length);
+      build();
+    });
+    tagRow.append(chip);
+  }
+  pattern.addEventListener("input", build);
+  textInput.addEventListener("input", build);
+  build();
+})();
+</script>
+</body>
+</html>

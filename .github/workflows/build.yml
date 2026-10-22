@@ -21,6 +21,10 @@ on:
         description: "デバッグ用に成果物をartifactにアップロードするか"
         type: boolean
         default: false
+      release_tag:
+        description: "リリースのタグ名（空欄ならバージョン情報と同じ。指定したタグは毎回最新のコミットに付け替える）"
+        required: false
+        default: ""
 
 env:
   VOICEVOX_ENGINE_VERSION: 0.25.2
@@ -28,6 +32,9 @@ env:
   VOICEVOX_EDITOR_VERSION:
     |- # workflow_dispatchのバージョン名か、999.999.999-developが入る
     ${{ github.event.inputs.version || '999.999.999-develop' }}
+  VOICEVOX_RELEASE_TAG:
+    |- # リリースのタグ名。指定がなければバージョン情報と同じ
+    ${{ github.event.inputs.release_tag || github.event.inputs.version || '999.999.999-develop' }}
 
 defaults:
   run:
@@ -394,7 +401,7 @@ jobs:
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           prerelease: ${{ github.event.inputs.prerelease }}
-          tag_name: ${{ env.VOICEVOX_EDITOR_VERSION }}
+          tag_name: ${{ env.VOICEVOX_RELEASE_TAG }}
           files: |-
             ${{ matrix.compressed_artifact_name }}-${{ env.VOICEVOX_EDITOR_VERSION }}.tar.gz
           target_commitish: ${{ github.sha }}
@@ -424,7 +431,7 @@ jobs:
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           prerelease: ${{ github.event.inputs.prerelease }}
-          tag_name: ${{ env.VOICEVOX_EDITOR_VERSION }}
+          tag_name: ${{ env.VOICEVOX_RELEASE_TAG }}
           files: |-
             ${{ matrix.compressed_artifact_name }}-${{ env.VOICEVOX_EDITOR_VERSION }}.zip
           target_commitish: ${{ github.sha }}
@@ -527,7 +534,7 @@ jobs:
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           prerelease: ${{ github.event.inputs.prerelease }}
-          tag_name: ${{ env.VOICEVOX_EDITOR_VERSION }}
+          tag_name: ${{ env.VOICEVOX_RELEASE_TAG }}
           files: |-
             dist_electron/*.7z.*
             VOICEVOX.${{ matrix.installer_artifact_name }}.${{ env.VOICEVOX_EDITOR_VERSION }}.sh
@@ -546,7 +553,7 @@ jobs:
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           prerelease: ${{ github.event.inputs.prerelease }}
-          tag_name: ${{ env.VOICEVOX_EDITOR_VERSION }}
+          tag_name: ${{ env.VOICEVOX_RELEASE_TAG }}
           files: |-
             dist_electron/*.dmg
           target_commitish: ${{ github.sha }}
@@ -565,8 +572,63 @@ jobs:
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           prerelease: ${{ github.event.inputs.prerelease }}
-          tag_name: ${{ env.VOICEVOX_EDITOR_VERSION }}
+          tag_name: ${{ env.VOICEVOX_RELEASE_TAG }}
           files: |-
             dist_electron/nsis-web/${{ matrix.voicevox_engine_asset_name != null && 'out/*.7z.*' || '*.nsis.7z' }}
             dist_electron/nsis-web/*.exe
           target_commitish: ${{ github.sha }}
+
+  # タグ名を指定したリリース（例：edge）は同じリリースを上書きし続けるため、
+  # アップロードが終わったらタグを最新のコミットに付け替え、今回更新されなかった古いアセットを削除する
+  update-fixed-tag-release:
+    needs: build-and-upload
+    if: github.event.inputs.release_tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Move tag and delete stale assets
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const tag = process.env.VOICEVOX_RELEASE_TAG;
+
+            // タグを今回ビルドしたコミットに付け替える
+            await github.rest.git.updateRef({
+              owner,
+              repo,
+              ref: `tags/${tag}`,
+              sha: context.sha,
+              force: true,
+            });
+
+            // 今回のワークフローが作られるより前に更新されたアセットは、今回作られなかった古いアセットなので削除する
+            // NOTE: 失敗したジョブだけ再実行したときも消さないよう、再実行で変わらないcreated_atを使う
+            const { data: run } = await github.rest.actions.getWorkflowRun({
+              owner,
+              repo,
+              run_id: context.runId,
+            });
+            const runCreatedAt = new Date(run.created_at);
+
+            const { data: release } = await github.rest.repos.getReleaseByTag({
+              owner,
+              repo,
+              tag,
+            });
+            const assets = await github.paginate(
+              github.rest.repos.listReleaseAssets,
+              { owner, repo, release_id: release.id, per_page: 100 },
+            );
+            for (const asset of assets) {
+              if (new Date(asset.updated_at) < runCreatedAt) {
+                console.log(`Delete stale asset: ${asset.name}`);
+                await github.rest.repos.deleteReleaseAsset({
+                  owner,
+                  repo,
+                  asset_id: asset.id,
+                });
+              }
+            }

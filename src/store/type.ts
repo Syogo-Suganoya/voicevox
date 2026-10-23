@@ -82,6 +82,7 @@ import type {
 } from "@/domain/project/type";
 import type { LatestProjectType } from "@/infrastructures/projectFile/type";
 import type { WavFormat } from "@/helpers/fileDataGenerator";
+import type { Result } from "@/type/result";
 
 /**
  * エディタ用のAudioQuery
@@ -434,6 +435,24 @@ export type AudioStoreTypes = {
 
   IS_STREAMING_SYNTHESIS_SUPPORTED: {
     getter: (audioItem: AudioItem) => boolean;
+  };
+
+  /** 音声を生成し、書き出し用の音声・lab・テキストを返す。ファイルへの保存は行わない。 */
+  GENERATE_AUDIO: {
+    action(payload: {
+      audioKey: AudioKey;
+      /** labのタイムスタンプに加算するオフセット（100ナノ秒単位）。音声を繋げる際に使う。 */
+      labOffset?: number;
+    }): Promise<
+      Result<
+        {
+          audio: Blob;
+          lab: string;
+          text: string;
+        },
+        "engine"
+      >
+    >;
   };
 
   GENERATE_AND_SAVE_AUDIO_FILE: {

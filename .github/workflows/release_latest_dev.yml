@@ -1,7 +1,8 @@
 name: Release latest dev build
 
 # mainブランチが更新されるたびに開発版をビルドしてデプロイする。
-# バージョン（タグ）は最新リリースのバージョンを`X.Y.Z`としたときの`X.Y+1.0-dev`。
+# バージョンは最新リリースのバージョンを`X.Y.Z`としたときの`X.Y+1.0-dev`。
+# ダウンロードURLが変わらないように、リリースのタグは固定の`edge`にする。
 
 on:
   push:
@@ -38,7 +39,8 @@ jobs:
               ref: 'main',
               inputs: {
                 version: dev_version,
-                prerelease: true
+                prerelease: true,
+                release_tag: 'edge'
               }
             })
 

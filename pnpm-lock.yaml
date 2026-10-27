@@ -17,10 +17,10 @@ importers:
         specifier: 1.18.0
         version: 1.18.0
       '@sevenc-nanashi/utaformatix-ts':
-        specifier: jsr:0.4.0
+        specifier: jsr:@sevenc-nanashi/utaformatix-ts@0.4.0
         version: '@jsr/sevenc-nanashi__utaformatix-ts@0.4.0'
       '@std/path':
-        specifier: jsr:1.1.4
+        specifier: jsr:@std/path@1.1.4
         version: '@jsr/std__path@1.1.4'
       async-lock:
         specifier: 1.4.1

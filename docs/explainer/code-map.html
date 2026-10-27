@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VOICEVOX コード逆引き</title>
+<meta name="description" content="VOICEVOX エディターの構成と処理の流れをつかみ、「この画面・この機能のコードはどこか」を引ける非公式リファレンス。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Noto+Sans+JP:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="how-it-works.html">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="3" width="28" height="22" rx="8" fill="#2f9a68"/><path d="M10 25 L9 30 L16 25 Z" fill="#2f9a68"/><g stroke="#fff" stroke-width="2.4" stroke-linecap="round"><line x1="9" y1="12" x2="9" y2="16"/><line x1="13" y1="9" x2="13" y2="19"/><line x1="17" y1="11" x2="17" y2="17"/><line x1="21" y1="8" x2="21" y2="20"/><line x1="25" y1="12" x2="25" y2="16"/></g></svg>
+      <span class="brand-text">VOICEVOX 解説資料</span>
+    </a>
+    <nav class="pages" aria-label="資料の切りかえ">
+      <a href="how-it-works.html">しくみ図鑑</a>
+      <a href="code-map.html" aria-current="page">コード逆引き</a>
+    </nav>
+  </div>
+</header>
+
+<section class="cover">
+  <svg class="cover-wave" viewBox="0 0 520 200" aria-hidden="true">
+    <g fill="none" stroke="#2f72c9" stroke-width="3" opacity=".25">
+      <rect x="300" y="30" width="80" height="40" rx="8"/><rect x="400" y="30" width="80" height="40" rx="8"/><rect x="350" y="110" width="80" height="40" rx="8"/>
+      <path d="M340 70 L390 110 M440 70 L390 110"/>
+    </g>
+    <path d="M0 150 C 80 110, 160 190, 240 140 S 360 110, 520 160" fill="none" stroke="#2f9a68" stroke-width="5" opacity=".3"/>
+  </svg>
+  <div class="wrap">
+    <div class="kicker">VOICEVOX EDITOR · CODE MAP</div>
+    <h1>VOICEVOX <em>コード逆引き</em></h1>
+    <p class="lead">構成図と処理の流れで全体をつかんでから、「この画面・この機能のコードはどこにあるか」を引けるようにしたリファレンスです。パスはクリックでコピーできます。</p>
+    <div class="basis">
+      <span>VOICEVOX エディター main ブランチ（933997f、2026年10月18日）のコードをもとに作成</span>
+      <span>src/ 約 440 ファイル・ストアの関数（getter・mutation・action）約 750 個</span>
+    </div>
+    <p class="notice">非公式の解説資料です。VOICEVOX の公式資料ではありません。</p>
+  </div>
+</section>
+
+<div class="wrap layout">
+  <aside class="toc" aria-label="もくじ">
+    <div class="toc-title">もくじ</div>
+    <ol>
+      <li><a href="#system"><span>01</span>システム構成</a></li>
+      <li><a href="#folders"><span>02</span>フォルダの地図</a></li>
+      <li><a href="#layers"><span>03</span>レイヤー構成</a></li>
+      <li><a href="#flows"><span>04</span>処理の流れ</a></li>
+      <li><a href="#data"><span>05</span>データの形</a></li>
+      <li><a href="#screens"><span>06</span>画面の逆引き</a></li>
+      <li><a href="#features"><span>07</span>機能の逆引き</a></li>
+      <li><a href="#cross"><span>08</span>横断的な仕組みの場所</a></li>
+    </ol>
+    <div class="also">あわせて読む：<a href="how-it-works.html">しくみ図鑑</a></div>
+  </aside>
+
+  <main>
+    <div class="toc-mobile">
+      <label class="toc-title" for="toc-select">もくじ</label>
+      <select id="toc-select">
+        <option value="#system">01 システム構成</option>
+        <option value="#folders">02 フォルダの地図</option>
+        <option value="#layers">03 レイヤー構成</option>
+        <option value="#flows">04 処理の流れ</option>
+        <option value="#data">05 データの形</option>
+        <option value="#screens">06 画面の逆引き</option>
+        <option value="#features">07 機能の逆引き</option>
+        <option value="#cross">08 横断的な仕組みの場所</option>
+      </select>
+    </div>
+
+    <!-- 01 -->
+    <section class="sec" id="system">
+      <div class="sec-head"><div class="sec-num">01</div><h2>システム構成</h2></div>
+      <p class="say">エディターは <mark>Electron の2つのプロセス</mark> と、子プロセスとして起動する <mark>エンジン</mark> でできています。データベースはなく、状態はすべてレンダラーの Vuex が持ちます。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 400" role="img" aria-label="メインプロセス、プリロード、レンダラー、エンジンの構成図">
+          <defs>
+            <marker id="m1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#46554f"/></marker>
+          </defs>
+          <!-- レンダラー -->
+          <rect x="20" y="20" width="400" height="300" rx="18" fill="#fbe5ee" stroke="#d2457a" stroke-width="2.5"/>
+          <text x="40" y="50" class="h" font-size="17" fill="#a52c5b">レンダラープロセス（ウィンドウの中）</text>
+          <text x="40" y="70" font-size="12" class="code" fill="#7b8782">src/main.ts → components/App.vue</text>
+          <rect x="44" y="86" width="352" height="54" rx="12" fill="#fff"/>
+          <text x="60" y="110" class="h" font-size="14" fill="#a52c5b">Vue コンポーネント</text>
+          <text x="60" y="130" font-size="12" class="code" fill="#46554f">components/Talk・Song・Dialog・Menu</text>
+          <rect x="44" y="150" width="352" height="70" rx="12" fill="#fff"/>
+          <text x="60" y="174" class="h" font-size="14" fill="#1f7550">Vuex ストア</text>
+          <text x="60" y="194" font-size="12" class="code" fill="#46554f">store/audio・song・project・engine・setting…</text>
+          <text x="60" y="212" font-size="12" fill="#7b8782">state ／ getter ／ mutation ／ action</text>
+          <rect x="44" y="230" width="170" height="70" rx="12" fill="#fff"/>
+          <text x="58" y="254" class="h" font-size="13.5" fill="#1f5297">エンジン接続</text>
+          <text x="58" y="274" font-size="11" class="code" fill="#46554f">store/proxy.ts</text>
+          <text x="58" y="290" font-size="11" class="code" fill="#46554f">src/openapi/</text>
+          <rect x="226" y="230" width="170" height="70" rx="12" fill="#fff"/>
+          <text x="240" y="254" class="h" font-size="13.5" fill="#8f6200">window.backend</text>
+          <text x="240" y="274" font-size="11" fill="#46554f">ファイル・設定・</text>
+          <text x="240" y="290" font-size="11" fill="#46554f">エンジン操作の窓口</text>
+          <!-- プリロード -->
+          <rect x="446" y="226" width="150" height="78" rx="14" fill="#eef0f2" stroke="#5b6670" stroke-width="2"/>
+          <text x="521" y="256" text-anchor="middle" class="h" font-size="14" fill="#5b6670">preload</text>
+          <text x="521" y="276" text-anchor="middle" font-size="11" class="code" fill="#46554f">contextBridge・IPC</text>
+          <text x="521" y="292" text-anchor="middle" font-size="10.5" class="code" fill="#7b8782">renderer/preload.ts</text>
+          <line x1="398" y1="265" x2="442" y2="265" stroke="#46554f" stroke-width="2" marker-start="url(#m1)" marker-end="url(#m1)"/>
+          <!-- メイン -->
+          <rect x="620" y="20" width="260" height="300" rx="18" fill="#fdf2d6" stroke="#c98a00" stroke-width="2.5"/>
+          <text x="640" y="50" class="h" font-size="17" fill="#8f6200">メインプロセス</text>
+          <text x="640" y="70" font-size="12" class="code" fill="#7b8782">backend/electron/main.ts</text>
+          <g font-size="12" fill="#46554f">
+            <rect x="640" y="86" width="220" height="34" rx="8" fill="#fff"/><text x="652" y="108">ipcMainHandle（窓口の実装）</text>
+            <rect x="640" y="126" width="220" height="34" rx="8" fill="#fff"/><text x="652" y="148">EngineProcessManager（起動・終了）</text>
+            <rect x="640" y="166" width="220" height="34" rx="8" fill="#fff"/><text x="652" y="188">VvppManager（エンジン追加）</text>
+            <rect x="640" y="206" width="220" height="34" rx="8" fill="#fff"/><text x="652" y="228">ConfigManager（config.json）</text>
+            <rect x="640" y="246" width="220" height="34" rx="8" fill="#fff"/><text x="652" y="268">WindowManager（窓）</text>
+          </g>
+          <line x1="598" y1="265" x2="636" y2="265" stroke="#46554f" stroke-width="2" marker-start="url(#m1)" marker-end="url(#m1)"/>
+          <!-- エンジン -->
+          <rect x="300" y="344" width="320" height="46" rx="14" fill="#e3edfa" stroke="#2f72c9" stroke-width="2.5"/>
+          <text x="460" y="372" text-anchor="middle" class="h" font-size="14" fill="#1f5297">エンジン（子プロセス・HTTP サーバー）</text>
+          <path d="M129 302 L129 367 L296 367" fill="none" stroke="#2f72c9" stroke-width="2" marker-end="url(#m1)"/>
+          <text x="140" y="358" font-size="11" fill="#1f5297">HTTP（fetch）</text>
+          <path d="M750 322 L750 367 L624 367" fill="none" stroke="#c98a00" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#m1)"/>
+          <text x="760" y="358" font-size="11" fill="#8f6200">spawn で起動</text>
+        </svg>
+        <figcaption>レンダラーからエンジンへの通信は、メインプロセスを通らずに直接 HTTP で行います。メインプロセスはエンジンの起動・終了とポートの管理だけを担当します。</figcaption>
+      </figure>
+      <div class="cards">
+        <div class="card sun"><div class="icon">📦</div><h4>配るもの</h4><p>electron-builder で、Windows は NSIS Web インストーラー、macOS は dmg、Linux は AppImage を作ります（<button class="path">build/electronBuilderConfig.ts</button>）。</p></div>
+        <div class="card leaf"><div class="icon">🧑‍💻</div><h4>手元で動かす</h4><p><code>pnpm run electron:serve</code> で Electron 版、<code>pnpm run browser:serve</code> でブラウザ版。<code>.env</code> でエンジンの場所を指定します。</p></div>
+        <div class="card plum"><div class="icon">🌐</div><h4>ブラウザ版</h4><p><button class="path">src/backend/browser/</button> が <code>window.backend</code> を Web API で再現します。e2e テストもこちらで動きます。</p></div>
+        <div class="card stone"><div class="icon">👋</div><h4>ウェルカム画面</h4><p>デフォルトのエンジンが見つからないときは、メインの窓ではなく <button class="path">src/welcome/</button> の窓を先に開きます。</p></div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section class="sec" id="folders">
+      <div class="sec-head"><div class="sec-num">02</div><h2>フォルダの地図</h2></div>
+      <div class="tree-box">
+        <ul class="tree">
+          <li>🏠 <span class="nm">voicevox/</span> <span class="ds">リポジトリ</span>
+            <ul>
+              <li>🧠 <span class="nm">src/</span> <span class="ds">本体</span> <span class="ct">約 440 ファイル</span>
+                <ul>
+                  <li>🚀 <span class="nm">main.ts</span> <span class="ds">レンダラーの入口。Vue・Vuex・Quasar を組みこむ</span></li>
+                  <li>🧰 <span class="nm">backend/</span> <span class="ds">ブラウザだけではできない処理</span>
+                    <ul>
+                      <li>🪟 <span class="nm">electron/</span> <span class="ds">メインプロセス・IPC・エンジン管理・preload</span> <span class="ct">26</span></li>
+                      <li>🌐 <span class="nm">browser/</span> <span class="ds">ブラウザ版の window.backend</span> <span class="ct">6</span></li>
+                      <li>⚙️ <span class="nm">common/</span> <span class="ds">設定ファイルの読み書き（両方で共通）</span></li>
+                    </ul>
+                  </li>
+                  <li>🖼️ <span class="nm">components/</span> <span class="ds">Vue コンポーネント</span>
+                    <ul>
+                      <li>🗣️ <span class="nm">Talk/</span> <span class="ds">トーク画面</span> <span class="ct">12</span></li>
+                      <li>🎤 <span class="nm">Song/</span> <span class="ds">ソング画面（シーケンサー）</span> <span class="ct">56</span></li>
+                      <li>💬 <span class="nm">Dialog/</span> <span class="ds">設定・辞書・書き出しなどのダイアログ</span> <span class="ct">47</span></li>
+                      <li>☰ <span class="nm">Menu/</span> <span class="ds">メニューバー・右クリックメニュー</span> <span class="ct">11</span></li>
+                      <li>🧱 <span class="nm">Base/</span> <span class="ds">ボタンなどの共通部品</span> <span class="ct">34</span></li>
+                    </ul>
+                  </li>
+                  <li>📒 <span class="nm">store/</span> <span class="ds">Vuex。ロジックの大半はここ</span> <span class="ct">20</span></li>
+                  <li>🎼 <span class="nm">song/</span> <span class="ds">ソングの計算・レンダリング・状態機械</span> <span class="ct">53</span></li>
+                  <li>🧩 <span class="nm">domain/</span> <span class="ds">画面に依存しないロジック（プロジェクトの型、日本語処理、テーマ…）</span></li>
+                  <li>🔌 <span class="nm">infrastructures/</span> <span class="ds">エンジン接続・プロジェクトファイルの変換</span></li>
+                  <li>📜 <span class="nm">openapi/</span> <span class="ds">エンジン API のクライアント（自動生成）</span> <span class="ct">43</span></li>
+                  <li>🤖 <span class="nm">mock/</span> <span class="ds">モックエンジン</span></li>
+                  <li>🪝 <span class="nm">composables/</span> <span class="ds">Vue の use〜 関数</span></li>
+                  <li>🛠️ <span class="nm">helpers/</span> <span class="ds">小さな便利関数</span></li>
+                  <li>🏷️ <span class="nm">type/</span> <span class="ds">ID の型・設定のスキーマ・Result 型</span></li>
+                  <li>👋 <span class="nm">welcome/</span> <span class="ds">ウェルカム画面（別の入口）</span></li>
+                </ul>
+              </li>
+              <li>🧪 <span class="nm">tests/</span> <span class="ds">unit（Vitest）・e2e（Playwright：browser / electron / storybook）</span></li>
+              <li>📦 <span class="nm">build/</span> <span class="ds">electron-builder の設定とインストーラーのスクリプト</span></li>
+              <li>🔧 <span class="nm">tools/</span> <span class="ds">OpenAPI 生成・ライセンス生成・コード署名など</span></li>
+              <li>📚 <span class="nm">docs/</span> <span class="ds">開発者向けドキュメント（この資料もここ）</span></li>
+              <li>🖼️ <span class="nm">public/</span> <span class="ds">アイコン・ヘルプの文章などの静的ファイル</span></li>
+              <li>🚦 <span class="nm">.github/</span> <span class="ds">CI（ビルド・テスト）</span></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section class="sec" id="layers">
+      <div class="sec-head"><div class="sec-num">03</div><h2>レイヤー構成</h2></div>
+      <p class="say">上の段は下の段だけを呼びます。<mark>コンポーネントからエンジンや window.backend を直接呼ばない</mark> のが約束です。</p>
+      <figure class="fig">
+        <svg viewBox="0 0 900 360" role="img" aria-label="コンポーネント、ストア、インフラ、バックエンドとエンジンのレイヤー">
+          <g font-size="13">
+            <rect x="40" y="16" width="820" height="62" rx="14" fill="#fbe5ee" stroke="#d2457a" stroke-width="2"/>
+            <text x="64" y="44" class="h" font-size="16" fill="#a52c5b">画面</text>
+            <text x="64" y="64" class="code" font-size="12" fill="#46554f">components/ ・ composables/</text>
+            <text x="836" y="52" text-anchor="end" fill="#46554f">useStore() で state を読み、actions を呼ぶ</text>
+
+            <rect x="40" y="92" width="820" height="78" rx="14" fill="#e2f3e9" stroke="#2f9a68" stroke-width="2"/>
+            <text x="64" y="120" class="h" font-size="16" fill="#1f7550">状態とロジック</text>
+            <text x="64" y="140" class="code" font-size="12" fill="#46554f">store/（Vuex）</text>
+            <text x="64" y="158" font-size="12" fill="#7b8782">COMMAND_ で始まる mutation は Undo 対象</text>
+            <text x="836" y="128" text-anchor="end" fill="#46554f">ダイアログの表示も action から呼んでよい</text>
+            <text x="836" y="150" text-anchor="end" fill="#46554f">UI ロック・進捗表示もここで管理</text>
+
+            <rect x="40" y="184" width="400" height="78" rx="14" fill="#efe9fa" stroke="#7856c2" stroke-width="2"/>
+            <text x="64" y="212" class="h" font-size="16" fill="#5a3ea0">ドメイン</text>
+            <text x="64" y="232" class="code" font-size="12" fill="#46554f">domain/ ・ song/ ・ helpers/</text>
+            <text x="64" y="250" font-size="12" fill="#7b8782">Vue にも Vuex にも依存しない計算</text>
+
+            <rect x="460" y="184" width="400" height="78" rx="14" fill="#e3edfa" stroke="#2f72c9" stroke-width="2"/>
+            <text x="484" y="212" class="h" font-size="16" fill="#1f5297">外とのつなぎ</text>
+            <text x="484" y="232" class="code" font-size="12" fill="#46554f">infrastructures/ ・ openapi/ ・ window.backend</text>
+            <text x="484" y="250" font-size="12" fill="#7b8782">エンジン・ファイル・設定</text>
+
+            <rect x="40" y="276" width="400" height="62" rx="14" fill="#fdf2d6" stroke="#c98a00" stroke-width="2"/>
+            <text x="64" y="304" class="h" font-size="16" fill="#8f6200">バックエンド</text>
+            <text x="64" y="324" class="code" font-size="12" fill="#46554f">backend/electron ・ backend/browser</text>
+
+            <rect x="460" y="276" width="400" height="62" rx="14" fill="#fff" stroke="#2f72c9" stroke-width="2" stroke-dasharray="6 4"/>
+            <text x="484" y="304" class="h" font-size="16" fill="#1f5297">エンジン（別リポジトリ）</text>
+            <text x="484" y="324" class="code" font-size="12" fill="#46554f">voicevox_engine</text>
+          </g>
+        </svg>
+      </figure>
+      <div class="cards">
+        <div class="card leaf"><div class="icon">✍️</div><h4>関数を足すときは型から</h4><p>Vuex の型は自前です。まず <button class="path">src/store/type.ts</button> の <code>〜StoreTypes</code> に宣言し、対応するストアに実装します。</p></div>
+        <div class="card sun"><div class="icon">🗂️</div><h4>Map や配列は差しかえる</h4><p>大きい Map・配列はインスタンスごと watch する前提です。更新するときは中身を書きかえず、新しいインスタンスに差しかえます。</p></div>
+        <div class="card berry"><div class="icon">⚠️</div><h4>エラーの出し方</h4><p>関数側で投げ、画面側でつかまえて表示します。ユーザーに見せる例外は <code>DisplayableError</code> を使います。</p></div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section class="sec" id="flows">
+      <div class="sec-head"><div class="sec-num">04</div><h2>処理の流れ</h2></div>
+      <p class="prose">カード＝<b>何をするか</b>、上の小さな文字＝<b>どのファイルか</b>、↓＝<b>次に渡すもの</b>。番号の順に読みます。</p>
+
+      <h3>A. アプリを起動する</h3>
+      <div class="flow">
+        <div class="flow-step"><div class="n">1</div><div class="body"><div class="where">backend/electron/main.ts</div><div class="what">🚀 app.whenReady() → startup()</div><div class="detail">渡された VVPP があれば先にインストール。デフォルトエンジンがなければウェルカム画面へ。</div></div></div>
+        <div class="flow-pass">engineInfos（エンジンの一覧）</div>
+        <div class="flow-step"><div class="n">2</div><div class="body"><div class="where">backend/electron/engineAndVvppController.ts → manager/engineProcessManager.ts</div><div class="what">🔌 launchEngines() → runEngineAll()</div><div class="detail">空いているポートを確かめ、エンジンを <code>spawn</code>。<code>--host</code>・<code>--port</code>・（GPU なら）<code>--use_gpu</code> を渡す。</div></div></div>
+        <div class="flow-pass">ポート番号（ふさがっていれば代わりの番号）</div>
+        <div class="flow-step"><div class="n">3</div><div class="body"><div class="where">backend/electron/manager/windowManager/main.ts</div><div class="what">🪟 createWindow()</div><div class="detail">preload を指定して BrowserWindow を作り、画面を読みこむ。</div></div></div>
+        <div class="flow-pass">src/main.ts（Vue アプリ）</div>
+        <div class="flow-step"><div class="n">4</div><div class="body"><div class="where">components/App.vue</div><div class="what">🧠 INIT_VUEX → PULL_AND_INIT_ENGINE_INFOS</div><div class="detail">設定・プリセットなどを読みこみ、メインプロセスからエンジンの一覧をもらう。</div></div></div>
+        <div class="flow-pass">engineId ごとに</div>
+        <div class="flow-step"><div class="n">5</div><div class="body"><div class="where">store/engine.ts</div><div class="what">⏳ POST_ENGINE_START → START_WAITING_ENGINE</div><div class="detail"><code>GET /version</code> を 1 秒おき・最大 100 回。返事が来たら READY にし、manifest・対応デバイス・キャラクター（<code>LOAD_CHARACTER</code>）・デフォルトスタイル・プリセットを準備。</div></div></div>
+        <div class="flow-pass">characterInfos</div>
+        <div class="flow-step"><div class="n">6</div><div class="body"><div class="where">components/App.vue → store/project/index.ts</div><div class="what">📂 SYNC_ALL_USER_DICT → LOAD_PROJECT_FILE</div><div class="detail">辞書をエンジン間でそろえ、起動時に渡されたプロジェクトがあれば開く。なければ空のテキスト欄を1つ作る。</div></div></div>
+      </div>
+
+      <h3>B. テキストを入力して再生する</h3>
+      <div class="flow">
+        <div class="flow-step"><div class="n">1</div><div class="body"><div class="where">components/Talk/AudioCell.vue</div><div class="what">⌨️ 入力が確定（blur・Enter）</div><div class="detail"><code>store.actions.COMMAND_CHANGE_AUDIO_ITEM_TEXT({ audioKey, text })</code></div></div></div>
+        <div class="flow-pass">audioKey・text</div>
+        <div class="flow-step"><div class="n">2</div><div class="body"><div class="where">store/audio.ts</div><div class="what">✂️ extractYomiText → FETCH_AUDIO_QUERY（または FETCH_ACCENT_PHRASES）</div><div class="detail">[メモ]・ルビを処理し、プロキシ経由で <code>POST /audio_query</code>。既存のクエリがあればアクセント句だけ取り直す。</div></div></div>
+        <div class="flow-pass">EditorAudioQuery</div>
+        <div class="flow-step"><div class="n">3</div><div class="body"><div class="where">store/audio.ts（mutation）</div><div class="what">📝 COMMAND_CHANGE_AUDIO_ITEM_TEXT</div><div class="detail">immer のパッチとして記録し、<code>audioItems[audioKey]</code> を更新（Undo 可能）。</div></div></div>
+        <div class="flow-pass">再生ボタン → audioKey</div>
+        <div class="flow-step"><div class="n">4</div><div class="body"><div class="where">store/audioPlayer.ts</div><div class="what">▶️ START_PLAYBACK</div><div class="detail">UI をロックし、mutex で同時再生を防ぐ。再生開始位置（アクセント句の先頭時刻）を計算。</div></div></div>
+        <div class="flow-pass">audioItem・playbackStartPosition</div>
+        <div class="flow-step"><div class="n">5</div><div class="body"><div class="where">store/audio.ts ・ store/audioGenerate.ts</div><div class="what">🎛️ PREPARE_AUDIO_FOR_PLAYBACK</div><div class="detail">クエリとスタイルからキャッシュキーを作り、LRU キャッシュ（256 件）を確認。なければ <code>synthesisRaw</code> ／ <code>streamingSynthesisRaw</code> ／ <code>synthesisMorphingRaw</code>。</div></div></div>
+        <div class="flow-pass">ReadableStream（WAV）</div>
+        <div class="flow-step"><div class="n">6</div><div class="body"><div class="where">store/audioPlayer.ts ・ domain/wavStream.ts</div><div class="what">🔊 PLAY_AUDIO_STREAM</div><div class="detail">WAV を読みながら再生。再生位置に合わせて、詳細調整欄のアクセント句がハイライトされる。</div></div></div>
+      </div>
+
+      <h3>C. 音声を書き出す</h3>
+      <div class="flow">
+        <div class="flow-step"><div class="n">1</div><div class="body"><div class="where">components/Talk/ToolBar.vue ・ メニュー</div><div class="what">💾 SHOW_GENERATE_AND_SAVE_SELECTED_AUDIO_FILE_DIALOG など</div><div class="detail">1つ・全部・つなげて の3種類。</div></div></div>
+        <div class="flow-pass">audioKey</div>
+        <div class="flow-step"><div class="n">2</div><div class="body"><div class="where">store/audio.ts</div><div class="what">🏷️ DEFAULT_AUDIO_FILE_NAME</div><div class="detail">ファイル名パターンから名前を作る（<code>buildAudioFileNameFromRawData</code>、<button class="path">src/store/utility.ts</button>）。</div></div></div>
+        <div class="flow-pass">ファイル名</div>
+        <div class="flow-step"><div class="n">3</div><div class="body"><div class="where">store/audio.ts</div><div class="what">📁 GENERATE_AND_SAVE_AUDIO_FILE</div><div class="detail">固定の保存先か保存ダイアログで場所を決め、上書き防止なら連番をつける。音は再生と同じ <code>PREPARE_AUDIO_FOR_PLAYBACK</code> から取るので、キャッシュも共有。</div></div></div>
+        <div class="flow-pass">ArrayBuffer（WAV）</div>
+        <div class="flow-step"><div class="n">4</div><div class="body"><div class="where">window.backend → backend/electron</div><div class="what">✍️ writeFile</div><div class="detail">設定に応じて <code>.lab</code>（<code>generateLabFromAudioQuery</code>）と <code>.txt</code> も書く。つなげる場合はエンジンの <code>connectWaves</code> で1本にする。</div></div></div>
+      </div>
+
+      <h3>D. ソングをレンダリングする</h3>
+      <div class="flow">
+        <div class="flow-step"><div class="n">1</div><div class="body"><div class="where">components/Song/ScoreSequencer.vue → store/song.ts</div><div class="what">🎹 ノートを編集</div><div class="detail"><code>COMMAND_ADD_NOTES</code>・<code>COMMAND_UPDATE_NOTES</code> など。ストアの watch がノート・テンポ・歌手・手描きデータの変化を見て <code>RENDER</code> を呼ぶ。</div></div></div>
+        <div class="flow-pass">RENDER</div>
+        <div class="flow-step"><div class="n">2</div><div class="body"><div class="where">store/song.ts → song/songTrackRendering.ts</div><div class="what">📸 createSnapshot → generatePhrases</div><div class="detail">プロジェクトの写しをとり、休符でノートを区切ってフレーズにする。実行中なら中断して再スタート。</div></div></div>
+        <div class="flow-pass">PhraseForRender[]</div>
+        <div class="flow-step"><div class="n">3</div><div class="body"><div class="where">song/songTrackRendering.ts</div><div class="what">🗃️ applyCachedDataToPhrases</div><div class="detail">クエリ → 歌唱ピッチ → 歌唱ボリューム → 歌声 の順にキャッシュを当てる。</div></div></div>
+        <div class="flow-pass">足りないフレーズ</div>
+        <div class="flow-step"><div class="n">4</div><div class="body"><div class="where">song/songTrackRendering.ts（SongTrackRenderer）</div><div class="what">🎯 selectPriorPhrase → renderPhrase</div><div class="detail">再生ヘッドに近いフレーズから、<code>fetchFrameAudioQuery</code> → <code>fetchSingFrameF0</code> → <code>fetchSingFrameVolume</code> → <code>frameSynthesis</code>。段階ごとにイベントを発行。</div></div></div>
+        <div class="flow-pass">歌声の Blob（イベント経由）</div>
+        <div class="flow-step"><div class="n">5</div><div class="body"><div class="where">store/song.ts ・ song/audioRendering.ts</div><div class="what">🎚️ イベントを受けてストアに反映</div><div class="detail">フレーズの状態を更新し、歌声を Transport（Web Audio）上のシーケンスとして並べる。</div></div></div>
+      </div>
+      <p class="prose">ソングのレンダリングは <button class="path">docs/ソングのレンダリング.md</button> にさらに詳しい説明があります。起動・終了の詳細は <button class="path">docs/res/起動シーケンス図.md</button> も参照。</p>
+    </section>
+
+    <!-- 05 -->
+    <section class="sec" id="data">
+      <div class="sec-head"><div class="sec-num">05</div><h2>データの形</h2></div>
+      <p class="say">トークは <mark>AudioItem</mark> を、ソングは <mark>Track と Note</mark> を中心にデータが流れます。</p>
+
+      <h3>AudioItem：テキスト欄1つ <button class="path">src/store/type.ts</button></h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>項目</th><th>型</th><th>役目</th></tr></thead>
+        <tbody>
+          <tr><td>text</td><td><code>string</code></td><td>入力されたテキスト（メモ・ルビ記法を含む）</td></tr>
+          <tr><td>voice</td><td><code>Voice</code></td><td><code>{ engineId, speakerId, styleId }</code>。声を一意に決める組</td></tr>
+          <tr><td>query</td><td><code>EditorAudioQuery?</code></td><td>エンジンから届いた設計図。まだなければ <code>undefined</code></td></tr>
+          <tr><td>presetKey</td><td><code>PresetKey?</code></td><td>適用しているプリセット</td></tr>
+          <tr><td>morphingInfo</td><td><code>MorphingInfo?</code></td><td>モーフィング相手のスタイルと割合</td></tr>
+        </tbody>
+      </table></div>
+      <p class="prose">ストアでは <code>audioKeys</code>（並び順の配列）と <code>audioItems</code>（キー → AudioItem）の2つに分けて持ちます。</p>
+
+      <h3>AudioQuery・AccentPhrase・Mora <button class="path">src/openapi/models/</button></h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>型</th><th>主な項目</th><th>役目</th></tr></thead>
+        <tbody>
+          <tr><td>AudioQuery</td><td><code>accentPhrases</code>・<code>speedScale</code>・<code>pitchScale</code>・<code>intonationScale</code>・<code>volumeScale</code>・<code>prePhonemeLength</code>・<code>postPhonemeLength</code>・<code>pauseLengthScale</code>・<code>outputSamplingRate</code>・<code>outputStereo</code>・<code>kana</code></td><td>音声合成の設計図。エディター側は <code>EditorAudioQuery</code>（サンプリングレートに <code>"engineDefault"</code> を許す）に変換して持つ（<button class="path">src/store/proxy.ts</button>）</td></tr>
+          <tr><td>AccentPhrase</td><td><code>moras</code>・<code>accent</code>・<code>pauseMora?</code>・<code>isInterrogative?</code></td><td>アクセント句。<code>accent</code> は 1〜モーラ数。疑問文なら語尾を上げる</td></tr>
+          <tr><td>Mora</td><td><code>text</code>・<code>consonant?</code>・<code>consonantLength?</code>・<code>vowel</code>・<code>vowelLength</code>・<code>pitch</code></td><td>1拍。詳細調整欄の「イントネーション」は <code>pitch</code>、「長さ」は <code>consonantLength</code>・<code>vowelLength</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Command：Undo の単位 <button class="path">src/store/command.ts</button></h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>項目</th><th>型</th><th>役目</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td><code>CommandId</code></td><td>保存時に「最後のコマンド」を覚えて、未保存かどうかを判定するのに使う</td></tr>
+          <tr><td>redoPatches</td><td><code>Patch[]</code></td><td>immer の変更パッチ</td></tr>
+          <tr><td>undoPatches</td><td><code>Patch[]</code></td><td>逆向きのパッチ</td></tr>
+        </tbody>
+      </table></div>
+      <p class="prose"><code>undoCommands</code>・<code>redoCommands</code> は <code>talk</code> と <code>song</code> で別々のスタックです。</p>
+
+      <h3>Track・Note：ソング <button class="path">src/domain/project/schema.ts</button></h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>型</th><th>主な項目</th><th>役目</th></tr></thead>
+        <tbody>
+          <tr><td>Note</td><td><code>id</code>・<code>position</code>・<code>duration</code>・<code>noteNumber</code>・<code>lyric</code></td><td>音符1つ。位置と長さは tick（4分音符 = 480 tick）、高さは MIDI ノート番号。歌詞未入力は <code>null</code></td></tr>
+          <tr><td>Track</td><td><code>name</code>・<code>singer?</code>・<code>notes</code>・<code>pitchEditData</code>・<code>volumeEditData</code>・<code>phonemeTimingEditData</code>・<code>solo</code>・<code>mute</code>・<code>gain</code>・<code>pan</code>・<code>keyRangeAdjustment</code>・<code>volumeRangeAdjustment</code></td><td>トラック1本。手で描いたピッチ（Hz）・音量・音素タイミングの編集もここに持つ</td></tr>
+          <tr><td>Tempo・TimeSignature</td><td><code>position</code>・<code>bpm</code> ／ <code>measureNumber</code>・<code>beats</code>・<code>beatType</code></td><td>テンポ（既定 120）と拍子（既定 4/4）の変化点</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>プロジェクトファイル（.vvproj） <button class="path">src/infrastructures/projectFile/schema.ts</button></h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>項目</th><th>中身</th><th>メモ</th></tr></thead>
+        <tbody>
+          <tr><td>appVersion</td><td>保存したエディターのバージョン</td><td>マイグレーションの判定に使う（<button class="path">src/infrastructures/projectFile/migration.ts</button>）</td></tr>
+          <tr><td>talk</td><td><code>audioKeys</code>・<code>audioItems</code></td><td>トークの全テキスト欄</td></tr>
+          <tr><td>song</td><td><code>tpqn</code>・<code>tempos</code>・<code>timeSignatures</code>・<code>tracks</code>・<code>trackOrder</code></td><td>ファイルでは Map を使えないので、<code>phonemeTimingEditData</code> などはオブジェクトに変換して保存（<button class="path">src/infrastructures/projectFile/conversion.ts</button>）</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>設定（config.json） <button class="path">src/type/preload.ts</button></h3>
+      <p class="prose">Zod のスキーマで定義され、メインプロセスの <code>ConfigManager</code> がユーザーデータフォルダの <code>config.json</code> に保存します。書き出し設定（<code>savingSetting</code>）、キー割り当て（<code>hotkeySettings</code>）、プリセット（<code>presets</code>）、エンジンごとの設定（<code>engineSettings</code>）などが入ります。古い形式は <button class="path">src/backend/common/ConfigManager.ts</button> がバージョンごとに変換します。</p>
+    </section>
+
+    <!-- 06 -->
+    <section class="sec" id="screens">
+      <div class="sec-head"><div class="sec-num">06</div><h2>画面の逆引き</h2></div>
+      <p class="prose">画面の名前から Vue ファイルを探せます。キーワードで絞りこめます（例：「辞書」「ソング ピッチ」）。</p>
+      <input type="search" class="search" placeholder="画面の名前やファイル名で絞りこむ" data-target="#screen-table" data-empty="#screen-empty" aria-label="画面の逆引きを絞りこむ">
+      <div class="table-wrap"><table id="screen-table">
+        <thead><tr><th>画面・部品</th><th>ファイル</th></tr></thead>
+        <tbody>
+          <tr><td>メイン画面の全体<span class="sub">トーク／ソングの切りかえ、ダイアログ</span></td><td><button class="path">src/components/App.vue</button></td></tr>
+          <tr><td>メニューバー</td><td><button class="path">src/components/Menu/MenuBar/MenuBar.vue</button><br><button class="path">src/components/Talk/menuBarData.ts</button><br><button class="path">src/components/Song/menuBarData.ts</button></td></tr>
+          <tr><td>トーク／ソングの切りかえボタン</td><td><button class="path">src/components/Menu/MenuBar/TitleBarEditorSwitcher.vue</button></td></tr>
+          <tr><td>ウィンドウ右上のボタン（ピン・最小化など）</td><td><button class="path">src/components/Menu/MenuBar/TitleBarButtons.vue</button><br><button class="path">src/components/Menu/MenuBar/MinMaxCloseButtons.vue</button></td></tr>
+          <tr><td>右クリックメニュー</td><td><button class="path">src/components/Menu/ContextMenu/Container.vue</button></td></tr>
+          <tr><td>トーク画面のレイアウト</td><td><button class="path">src/components/Talk/TalkEditor.vue</button></td></tr>
+          <tr><td>トークのツールバー<span class="sub">再生・書き出し・Undo などのボタン</span></td><td><button class="path">src/components/Talk/ToolBar.vue</button></td></tr>
+          <tr><td>テキスト欄（台本の1行）</td><td><button class="path">src/components/Talk/AudioCell.vue</button></td></tr>
+          <tr><td>キャラクター選択ボタン</td><td><button class="path">src/components/CharacterButton.vue</button></td></tr>
+          <tr><td>キャラクターの立ち絵（トーク）</td><td><button class="path">src/components/Talk/CharacterPortrait.vue</button></td></tr>
+          <tr><td>パラメーター調整欄<span class="sub">話速・音高・抑揚・音量・プリセット</span></td><td><button class="path">src/components/Talk/AudioInfo.vue</button><br><button class="path">src/components/Talk/v2/ParameterSlider.vue</button></td></tr>
+          <tr><td>詳細調整欄<span class="sub">アクセント・イントネーション・長さ</span></td><td><button class="path">src/components/Talk/AudioDetail.vue</button><br><button class="path">src/components/Talk/AccentPhrase.vue</button></td></tr>
+          <tr><td>アクセントの線とスライダー</td><td><button class="path">src/components/Talk/AudioAccent.vue</button></td></tr>
+          <tr><td>イントネーション・長さのスライダー</td><td><button class="path">src/components/Talk/AudioParameter.vue</button></td></tr>
+          <tr><td>ソング画面のレイアウト</td><td><button class="path">src/components/Song/SongEditor.vue</button></td></tr>
+          <tr><td>ソングのツールバー<span class="sub">再生・テンポ・拍子・音量</span></td><td><button class="path">src/components/Song/ToolBar/ToolBar.vue</button></td></tr>
+          <tr><td>シーケンサー（ピアノロール）</td><td><button class="path">src/components/Song/ScoreSequencer.vue</button></td></tr>
+          <tr><td>ノート1つ・歌詞入力</td><td><button class="path">src/components/Song/SequencerNote.vue</button><br><button class="path">src/components/Song/SequencerLyricInput.vue</button></td></tr>
+          <tr><td>鍵盤・ルーラー・グリッド</td><td><button class="path">src/components/Song/SequencerKeys.vue</button><br><button class="path">src/components/Song/SequencerRuler/Container.vue</button><br><button class="path">src/components/Song/SequencerGrid/Container.vue</button></td></tr>
+          <tr><td>ピッチの線・波形</td><td><button class="path">src/components/Song/SequencerPitch.vue</button><br><button class="path">src/components/Song/SequencerWaveform.vue</button></td></tr>
+          <tr><td>音量エディター</td><td><button class="path">src/components/Song/SequencerVolumeEditor/Container.vue</button></td></tr>
+          <tr><td>音素タイミングの編集</td><td><button class="path">src/components/Song/SequencerPhonemeTimingEditor.vue</button></td></tr>
+          <tr><td>下のパラメーターパネル</td><td><button class="path">src/components/Song/SequencerParameterPanel.vue</button></td></tr>
+          <tr><td>トラック一覧（サイドバー）</td><td><button class="path">src/components/Song/SideBar/SideBar.vue</button><br><button class="path">src/components/Song/SideBar/TrackItem.vue</button></td></tr>
+          <tr><td>歌手の選択</td><td><button class="path">src/components/Song/CharacterMenuButton/CharacterSelectMenu.vue</button></td></tr>
+          <tr><td>テンポ・拍子の変更ダイアログ</td><td><button class="path">src/components/Song/ChangeValueDialog/TempoChangeDialog.vue</button><br><button class="path">src/components/Song/ChangeValueDialog/TimeSignatureChangeDialog.vue</button></td></tr>
+          <tr><td>ソングの書き出し中の表示</td><td><button class="path">src/components/Song/ExportOverlay.vue</button></td></tr>
+          <tr><td>ダイアログのまとめ役</td><td><button class="path">src/components/Dialog/AllDialog.vue</button></td></tr>
+          <tr><td>設定（オプション）</td><td><button class="path">src/components/Dialog/SettingDialog/SettingDialog.vue</button></td></tr>
+          <tr><td>書き出しファイル名パターン</td><td><button class="path">src/components/Dialog/SettingDialog/FileNameTemplateDialog.vue</button></td></tr>
+          <tr><td>読み方＆アクセント辞書</td><td><button class="path">src/components/Dialog/DictionaryManageDialog/DictionaryManageDialog.vue</button><br><button class="path">src/components/Dialog/DictionaryManageDialog/WordEditor.vue</button></td></tr>
+          <tr><td>キー割り当て</td><td><button class="path">src/components/Dialog/HotkeySettingDialog.vue</button><br><button class="path">src/components/Dialog/HotkeyRecordingDialog.vue</button></td></tr>
+          <tr><td>ツールバーのカスタマイズ</td><td><button class="path">src/components/Dialog/ToolBarCustomDialog.vue</button></td></tr>
+          <tr><td>キャラクター一覧・詳細</td><td><button class="path">src/components/Dialog/CharacterListDialog.vue</button><br><button class="path">src/components/Dialog/CharacterDetailDialog.vue</button></td></tr>
+          <tr><td>エンジンの管理</td><td><button class="path">src/components/Dialog/EngineManageDialog.vue</button></td></tr>
+          <tr><td>プリセットの管理</td><td><button class="path">src/components/Dialog/PresetManageDialog.vue</button></td></tr>
+          <tr><td>ヘルプ（ライセンス・更新情報など）</td><td><button class="path">src/components/Dialog/HelpDialog/HelpDialog.vue</button></td></tr>
+          <tr><td>利用規約・データ収集の同意</td><td><button class="path">src/components/Dialog/AcceptDialog/AcceptTermsDialog.vue</button><br><button class="path">src/components/Dialog/AcceptDialog/AcceptRetrieveTelemetryDialog.vue</button></td></tr>
+          <tr><td>ソングの音声書き出しダイアログ</td><td><button class="path">src/components/Dialog/ExportSongAudioDialog/Container.vue</button></td></tr>
+          <tr><td>外部の楽譜・プロジェクトの読みこみ</td><td><button class="path">src/components/Dialog/ImportSongProjectDialog.vue</button></td></tr>
+          <tr><td>アップデートのお知らせ</td><td><button class="path">src/components/Dialog/UpdateNotificationDialog/Container.vue</button></td></tr>
+          <tr><td>書き出し結果の一覧</td><td><button class="path">src/components/Dialog/SaveAllResultDialog.vue</button></td></tr>
+          <tr><td>エンジン起動中の表示</td><td><button class="path">src/components/EngineStartupOverlay.vue</button></td></tr>
+          <tr><td>進捗バー</td><td><button class="path">src/components/ProgressView.vue</button></td></tr>
+          <tr><td>ウェルカム画面</td><td><button class="path">src/welcome/components/App.vue</button></td></tr>
+        </tbody>
+      </table></div>
+      <p class="empty" id="screen-empty">見つかりませんでした。別のことばで試してみてください。</p>
+    </section>
+
+    <!-- 07 -->
+    <section class="sec" id="features">
+      <div class="sec-head"><div class="sec-num">07</div><h2>機能の逆引き</h2></div>
+      <p class="prose">「〜したい」「〜を直したい」から、入口になるストアの関数とファイルを探せます。</p>
+      <input type="search" class="search" placeholder="やりたいことや関数名で絞りこむ" data-target="#feature-table" data-empty="#feature-empty" aria-label="機能の逆引きを絞りこむ">
+      <div class="table-wrap"><table id="feature-table">
+        <thead><tr><th>やりたいこと</th><th>入口（関数）</th><th>ファイル</th></tr></thead>
+        <tbody>
+          <tr><td>テキストを変えたときの処理</td><td><code>COMMAND_CHANGE_AUDIO_ITEM_TEXT</code></td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>メモ・ルビ記法の処理</td><td><code>extractYomiText</code>・<code>extractExportText</code></td><td><button class="path">src/store/utility.ts</button></td></tr>
+          <tr><td>テキスト欄の追加・削除・並べかえ</td><td><code>COMMAND_REGISTER_AUDIO_ITEM</code>・<code>COMMAND_MULTI_REMOVE_AUDIO_ITEM</code>・<code>COMMAND_SET_AUDIO_KEYS</code></td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>複数行の貼りつけ・テキスト読みこみ</td><td><code>COMMAND_PUT_TEXTS</code>・<code>COMMAND_IMPORT_FROM_FILE</code></td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>キャラクター・スタイルの変更</td><td><code>COMMAND_MULTI_CHANGE_VOICE</code></td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>アクセント位置の変更</td><td><code>COMMAND_CHANGE_ACCENT</code>（中で <code>FETCH_MORA_DATA</code>）</td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>アクセント句の区切りを変える</td><td><code>COMMAND_CHANGE_ACCENT_PHRASE_SPLIT</code></td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>イントネーション・長さの調整</td><td><code>COMMAND_SET_AUDIO_ITEM_MORA_DATA</code></td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>話速・音高・抑揚・音量など</td><td><code>COMMAND_MULTI_SET_AUDIO_ITEM_SPEED_SCALE</code> ほか</td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>テキスト変更時に調整を残す</td><td><code>TuningTranscription</code></td><td><button class="path">src/store/utility.ts</button></td></tr>
+          <tr><td>モーフィング</td><td><code>COMMAND_MULTI_SET_MORPHING_INFO</code>・<code>isMorphable</code></td><td><button class="path">src/store/audio.ts</button><br><button class="path">src/store/audioGenerate.ts</button></td></tr>
+          <tr><td>再生・停止</td><td><code>START_PLAYBACK</code>・<code>STOP_PLAYBACK</code></td><td><button class="path">src/store/audioPlayer.ts</button></td></tr>
+          <tr><td>連続再生</td><td><code>START_CONTINUOUS_PLAYBACK</code></td><td><button class="path">src/store/audioPlayer.ts</button><br><button class="path">src/store/audioContinuousPlayer.ts</button></td></tr>
+          <tr><td>音声合成・キャッシュ・ストリーミング</td><td><code>PREPARE_AUDIO_FOR_PLAYBACK</code></td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>キャッシュのキーを作る</td><td><code>generateUniqueIdAndQuery</code></td><td><button class="path">src/store/audioGenerate.ts</button></td></tr>
+          <tr><td>音声を1つ書き出す</td><td><code>GENERATE_AND_SAVE_AUDIO_FILE</code></td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>全部書き出す・つなげて書き出す</td><td><code>MULTI_GENERATE_AND_SAVE_AUDIO_FILE</code>・<code>GENERATE_AND_CONNECT_AND_SAVE_AUDIO_FILE</code></td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>テキストを書き出す</td><td><code>CONNECT_AND_EXPORT_TEXT</code></td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>.lab ファイルを作る</td><td><code>generateLabFromAudioQuery</code></td><td><button class="path">src/store/audioGenerate.ts</button></td></tr>
+          <tr><td>書き出しファイル名</td><td><code>DEFAULT_AUDIO_FILE_NAME</code>・<code>buildAudioFileNameFromRawData</code></td><td><button class="path">src/store/audio.ts</button><br><button class="path">src/store/utility.ts</button></td></tr>
+          <tr><td>Undo・Redo</td><td><code>UNDO</code>・<code>REDO</code>・<code>createCommandMutation</code></td><td><button class="path">src/store/command.ts</button></td></tr>
+          <tr><td>プロジェクトの新規作成・読みこみ</td><td><code>CREATE_NEW_PROJECT</code>・<code>LOAD_PROJECT_FILE</code></td><td><button class="path">src/store/project/index.ts</button></td></tr>
+          <tr><td>プロジェクトの保存</td><td><code>SAVE_PROJECT_FILE_OVERWRITE</code>・<code>SAVE_PROJECT_FILE_AS</code></td><td><button class="path">src/store/project/index.ts</button><br><button class="path">src/store/project/saveProjectHelper.ts</button></td></tr>
+          <tr><td>未保存の判定</td><td><code>IS_EDITED</code></td><td><button class="path">src/store/project/index.ts</button></td></tr>
+          <tr><td>古いプロジェクトファイルの変換</td><td><code>migrateProjectFileObject</code></td><td><button class="path">src/infrastructures/projectFile/migration.ts</button></td></tr>
+          <tr><td>ユーザー辞書</td><td><code>ADD_WORD</code>・<code>REWRITE_WORD</code>・<code>DELETE_WORD</code>・<code>SYNC_ALL_USER_DICT</code></td><td><button class="path">src/store/dictionary.ts</button></td></tr>
+          <tr><td>プリセット</td><td><code>ADD_PRESET</code>・<code>UPDATE_PRESET</code>・<code>DELETE_PRESET</code></td><td><button class="path">src/store/preset.ts</button></td></tr>
+          <tr><td>キャラクター情報の読みこみ</td><td><code>LOAD_CHARACTER</code></td><td><button class="path">src/store/audio.ts</button></td></tr>
+          <tr><td>エンジンの起動待ち・再起動</td><td><code>START_WAITING_ENGINE</code>・<code>RESTART_ENGINES</code></td><td><button class="path">src/store/engine.ts</button></td></tr>
+          <tr><td>エンジンへの接続</td><td><code>INSTANTIATE_ENGINE_CONNECTOR</code></td><td><button class="path">src/store/proxy.ts</button><br><button class="path">src/infrastructures/EngineConnector.ts</button></td></tr>
+          <tr><td>エンジンの起動・終了（プロセス）</td><td><code>EngineProcessManager</code></td><td><button class="path">src/backend/electron/manager/engineProcessManager.ts</button></td></tr>
+          <tr><td>エンジンの追加（VVPP・フォルダ）</td><td><code>INSTALL_VVPP_ENGINE</code>・<code>ADD_ENGINE_DIR</code>・<code>VvppManager</code></td><td><button class="path">src/store/engine.ts</button><br><button class="path">src/backend/electron/manager/vvppManager.ts</button></td></tr>
+          <tr><td>GPU / CPU の切りかえ</td><td><code>CHANGE_USE_GPU</code></td><td><button class="path">src/store/setting.ts</button></td></tr>
+          <tr><td>設定の読みこみ・保存</td><td><code>HYDRATE_SETTING_STORE</code>・<code>ConfigManager</code></td><td><button class="path">src/store/setting.ts</button><br><button class="path">src/backend/common/ConfigManager.ts</button></td></tr>
+          <tr><td>設定項目を増やす</td><td><code>getConfigSchema</code>（Zod）</td><td><button class="path">src/type/preload.ts</button></td></tr>
+          <tr><td>ショートカットキー</td><td><code>hotkeyActionNameSchema</code>（アクション名）・<code>useHotkeyManager</code></td><td><button class="path">src/domain/hotkeyAction.ts</button><br><button class="path">src/plugins/hotkeyPlugin.ts</button></td></tr>
+          <tr><td>テーマ（色）</td><td><code>SET_CURRENT_THEME_SETTING</code></td><td><button class="path">src/store/setting.ts</button><br><button class="path">src/domain/theme/index.ts</button></td></tr>
+          <tr><td>ソングのノート編集</td><td><code>COMMAND_ADD_NOTES</code>・<code>COMMAND_UPDATE_NOTES</code>・<code>COMMAND_REMOVE_NOTES</code></td><td><button class="path">src/store/song.ts</button></td></tr>
+          <tr><td>シーケンサーのマウス操作</td><td>状態機械（ステート）</td><td><button class="path">src/song/sequencerStateMachine/</button></td></tr>
+          <tr><td>ピッチ・音量の手描き</td><td><code>COMMAND_SET_PITCH_EDIT_DATA</code>・<code>COMMAND_SET_VOLUME_EDIT_DATA</code></td><td><button class="path">src/store/song.ts</button></td></tr>
+          <tr><td>ソングのレンダリング</td><td><code>RENDER</code>・<code>SongTrackRenderer</code></td><td><button class="path">src/store/song.ts</button><br><button class="path">src/song/songTrackRendering.ts</button></td></tr>
+          <tr><td>ソングの再生（Web Audio）</td><td><code>Transport</code>・<code>ChannelStrip</code></td><td><button class="path">src/song/audioRendering.ts</button></td></tr>
+          <tr><td>トラックの追加・削除・ミュート</td><td><code>COMMAND_INSERT_EMPTY_TRACK</code>・<code>COMMAND_DELETE_TRACK</code>・<code>COMMAND_SET_TRACK_MUTE</code></td><td><button class="path">src/store/song.ts</button></td></tr>
+          <tr><td>ソングの音声書き出し</td><td><code>EXPORT_AUDIO_FILE</code>・<code>EXPORT_STEM_AUDIO_FILE</code></td><td><button class="path">src/store/song.ts</button></td></tr>
+          <tr><td>外部ソフトの楽譜を読みこむ</td><td><code>COMMAND_IMPORT_UTAFORMATIX_PROJECT</code></td><td><button class="path">src/store/song.ts</button><br><button class="path">src/song/utaformatixProject/</button></td></tr>
+          <tr><td>エンジン API の型を更新する</td><td><code>pnpm run generate-openapi</code></td><td><button class="path">tools/generateOpenapi.ts</button><br><button class="path">openapi.json</button></td></tr>
+          <tr><td>アプリの起動・終了の流れ</td><td><code>startup</code>・<code>onQuitRequest</code></td><td><button class="path">src/backend/electron/appStateController.ts</button></td></tr>
+          <tr><td>レンダラーから呼べる裏方の関数を足す</td><td>IPC の型と実装</td><td><button class="path">src/backend/electron/ipcType.ts</button><br><button class="path">src/backend/electron/manager/ipcMainHandleManager.ts</button><br><button class="path">src/backend/electron/renderer/preload.ts</button></td></tr>
+        </tbody>
+      </table></div>
+      <p class="empty" id="feature-empty">見つかりませんでした。別のことばで試してみてください。</p>
+    </section>
+
+    <!-- 08 -->
+    <section class="sec" id="cross">
+      <div class="sec-head"><div class="sec-num">08</div><h2>横断的な仕組みの場所</h2></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>しくみ</th><th>何をしているか</th><th>ファイル</th></tr></thead>
+        <tbody>
+          <tr><td>型つき Vuex</td><td><code>createPartialStore</code> で各ストアを型つきで定義し、<code>index.ts</code> でまとめる</td><td><button class="path">src/store/vuex.ts</button><br><button class="path">src/store/type.ts</button><br><button class="path">src/store/index.ts</button></td></tr>
+          <tr><td>Undo・Redo</td><td><code>COMMAND_</code> の mutation を immer のパッチで記録</td><td><button class="path">src/store/command.ts</button></td></tr>
+          <tr><td>UI ロック・進捗</td><td><code>createUILockAction</code> で処理中は操作を止める</td><td><button class="path">src/store/ui.ts</button></td></tr>
+          <tr><td>エラー表示</td><td><code>DisplayableError</code>（ユーザー向けメッセージつき例外）</td><td><button class="path">src/helpers/errorHelper.ts</button></td></tr>
+          <tr><td>IPC のエラー受けわたし</td><td>例外を <code>TransferableResult</code> に包んで、プロセスをまたいでも同じ型で扱う</td><td><button class="path">src/backend/electron/transferableResultHelper.ts</button></td></tr>
+          <tr><td>ID の型</td><td><code>EngineId</code>・<code>SpeakerId</code>・<code>StyleId</code>・<code>AudioKey</code> などを区別する型</td><td><button class="path">src/type/preload.ts</button></td></tr>
+          <tr><td>Result 型</td><td>成功と失敗を値で返す</td><td><button class="path">src/type/result.ts</button></td></tr>
+          <tr><td>ログ</td><td>レンダラーからは <code>window.backend.logError</code> など、メインでは electron-log</td><td><button class="path">src/helpers/log.ts</button></td></tr>
+          <tr><td>モックエンジン</td><td>本物のエンジンなしで動かすための実装（テスト・ブラウザ版）</td><td><button class="path">src/mock/engineMock/</button></td></tr>
+          <tr><td>エンジン接続の切りかえ</td><td>製品版 Electron は本物だけ、それ以外はモックも使える</td><td><button class="path">src/store/proxy.ts</button></td></tr>
+          <tr><td>ダイアログを関数で出す</td><td><code>showAlertDialog</code>・<code>showQuestionDialog</code> など</td><td><button class="path">src/components/Dialog/Dialog.ts</button></td></tr>
+          <tr><td>アプリのセキュリティ</td><td>リンクは外部ブラウザ、ナビゲーション禁止、Electron Fuses</td><td><button class="path">src/backend/electron/main.ts</button><br><button class="path">build/electronBuilderConfig.ts</button></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>CI で毎回確かめていること</h3>
+      <div class="cards">
+        <div class="card leaf"><div class="icon">🔍</div><h4>型と lint</h4><p><code>pnpm run typecheck</code>（vue-tsc）・<code>pnpm run lint</code>（ESLint・Prettier）・typos</p></div>
+        <div class="card sky"><div class="icon">🧪</div><h4>単体テスト</h4><p><code>pnpm run test:unit</code>（Vitest）。<button class="path">tests/unit/</button></p></div>
+        <div class="card berry"><div class="icon">🖱️</div><h4>e2e テスト</h4><p>ブラウザ版・Electron 版を Playwright で操作。<button class="path">tests/e2e/</button></p></div>
+        <div class="card plum"><div class="icon">📸</div><h4>見た目の比較</h4><p>Storybook とスクリーンショットで画面の変化を検出</p></div>
+      </div>
+      <footer class="foot">
+        この資料は VOICEVOX の公式資料ではありません。オープンソースで公開されている <a href="https://github.com/VOICEVOX/voicevox">VOICEVOX/voicevox</a>（このページはフォーク Syogo-Suganoya/voicevox の main ブランチ）のソースコードと、リポジトリ内のドキュメント（<code>docs/</code>）を読んでまとめたものです。内容の正確さは保証できず、最新のコードとちがう場合があります。
+      </footer>
+    </section>
+  </main>
+</div>
+
+<script>
+// VOICEVOX 解説資料 共通スクリプト
+(() => {
+  // 目次：いま読んでいる節をハイライトする
+  const tocLinks = [...document.querySelectorAll(".toc a[href^='#']")];
+  const sections = tocLinks
+    .map((a) => document.querySelector(a.getAttribute("href")))
+    .filter(Boolean);
+  if (sections.length > 0 && "IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const id = `#${entry.target.id}`;
+          for (const a of tocLinks) {
+            a.classList.toggle("active", a.getAttribute("href") === id);
+          }
+        }
+      },
+      { rootMargin: "-30% 0px -60% 0px" },
+    );
+    for (const section of sections) observer.observe(section);
+  }
+
+  // スマホ用の目次（select）
+  const mobileToc = document.querySelector(".toc-mobile select");
+  if (mobileToc) {
+    mobileToc.addEventListener("change", () => {
+      const target = document.querySelector(mobileToc.value);
+      if (target) target.scrollIntoView({ behavior: "smooth" });
+    });
+  }
+
+  // パスをクリックでコピー
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.setAttribute("role", "status");
+  document.body.append(toast);
+  let toastTimer;
+  const showToast = (text) => {
+    toast.textContent = text;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 1400);
+  };
+  document.addEventListener("click", async (event) => {
+    const button = event.target.closest("button.path");
+    if (!button) return;
+    const text = button.dataset.copy ?? button.textContent.trim();
+    try {
+      await navigator.clipboard.writeText(text);
+      button.classList.add("copied");
+      setTimeout(() => button.classList.remove("copied"), 1200);
+      showToast(`コピーしました：${text}`);
+    } catch {
+      showToast("コピーできませんでした");
+    }
+  });
+
+  // 表の絞りこみ検索
+  for (const input of document.querySelectorAll("input.search[data-target]")) {
+    const table = document.querySelector(input.dataset.target);
+    if (!table) continue;
+    const rows = [...table.querySelectorAll("tbody tr")];
+    const empty = document.querySelector(input.dataset.empty);
+    input.addEventListener("input", () => {
+      const words = input.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      let shown = 0;
+      for (const row of rows) {
+        const text = row.textContent.toLowerCase();
+        const hit = words.every((word) => text.includes(word));
+        row.hidden = !hit;
+        if (hit) shown++;
+      }
+      if (empty) empty.style.display = shown === 0 ? "block" : "none";
+    });
+  }
+})();
+</script>
+</body>
+</html>

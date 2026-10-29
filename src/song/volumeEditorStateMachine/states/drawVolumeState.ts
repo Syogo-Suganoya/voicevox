@@ -175,7 +175,7 @@ export class DrawVolumeState implements State<
       );
       if (countVolumeEditDataPoints(maskedPreviewData) >= 2) {
         // TODO: 平滑化を行う...特にdBスケールにするのであれば他も見直す必要がある
-        void context.store.actions.COMMAND_SET_VOLUME_EDIT_DATA({
+        void context.store.actions.COMMAND_UPDATE_VOLUME_EDIT_DATA_RANGE({
           volumeArray: maskedPreviewData,
           startFrame: context.previewVolumeEdit.value.startFrame,
           trackId: this.trackId,

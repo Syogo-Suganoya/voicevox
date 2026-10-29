@@ -79,7 +79,7 @@ export type VolumeEditorPartialStore = {
   readonly getters: Pick<Store["getters"], "SELECTED_TRACK_ID">;
   readonly actions: Pick<
     Store["actions"],
-    "COMMAND_SET_VOLUME_EDIT_DATA" | "COMMAND_ERASE_VOLUME_EDIT_DATA"
+    "COMMAND_UPDATE_VOLUME_EDIT_DATA_RANGE" | "COMMAND_ERASE_VOLUME_EDIT_DATA"
   >;
 };
 

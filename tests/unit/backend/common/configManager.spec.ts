@@ -1,8 +1,15 @@
 import { vi, it, expect, afterEach } from "vitest";
 import pastConfigs from "./pastConfigs";
 import configBugDefaultPreset1996 from "./pastConfigs/0.19.1-bug_default_preset.json";
+import config013 from "./pastConfigs/0.13.json";
 import { BaseConfigManager } from "@/backend/common/ConfigManager";
-import { getConfigSchema } from "@/type/preload";
+import { loadEnvEngineInfos } from "@/domain/defaultEngine/envEngineInfo";
+import { HotkeyCombination } from "@/domain/hotkeyAction";
+import {
+  engineSettingSchema,
+  getConfigSchema,
+  SpeakerId,
+} from "@/type/preload";
 
 const configBase = {
   ...getConfigSchema({ isMac: false }).parse({}),
@@ -83,8 +90,9 @@ for (const [version, data] of pastConfigs) {
     vi.spyOn(TestConfigManager.prototype, "save").mockImplementation(
       async () => undefined,
     );
-    vi.spyOn(TestConfigManager.prototype, "load").mockImplementation(
-      async () => data,
+    // マイグレーションで書き換わらないようにコピーを渡す
+    vi.spyOn(TestConfigManager.prototype, "load").mockImplementation(async () =>
+      structuredClone(data),
     );
 
     const configManager = new TestConfigManager();
@@ -95,6 +103,52 @@ for (const [version, data] of pastConfigs) {
     expect(configManager.getAll()).toMatchSnapshot();
   });
 }
+
+it("0.13.0の初期設定値からマイグレーションすると、現在の初期設定値と同じになる", async () => {
+  vi.spyOn(TestConfigManager.prototype, "exists").mockImplementation(
+    async () => true,
+  );
+  vi.spyOn(TestConfigManager.prototype, "save").mockImplementation(
+    async () => undefined,
+  );
+  vi.spyOn(TestConfigManager.prototype, "load").mockImplementation(async () =>
+    structuredClone(config013),
+  );
+
+  const configManager = new TestConfigManager();
+  await configManager.initialize();
+
+  const defaultConfig = getConfigSchema({ isMac: false }).parse({});
+  const engineId = loadEnvEngineInfos()[0].uuid;
+  const expected: typeof defaultConfig = {
+    ...defaultConfig,
+
+    // 利用規約などへの同意やキャラクターの並び順は、ユーザーの操作による値なので引き継がれる
+    acceptTerms: "Accepted",
+    acceptRetrieveTelemetry: "Accepted",
+    userCharacterOrder: config013.userCharacterOrder.map(SpeakerId),
+
+    // useGpuとoutputSamplingRateはエンジンごとの設定に移行される
+    engineSettings: {
+      [engineId]: engineSettingSchema.parse({}),
+    },
+
+    savingSetting: {
+      ...defaultConfig.savingSetting,
+      // 過去の初期値は"default"だった。""と同じく既定の出力デバイスを指す。
+      audioOutputDevice: "default",
+    },
+
+    // 後から追加されたショートカットのうち、既存のショートカットとキーが重複するものは未割り当てになる
+    hotkeySettings: defaultConfig.hotkeySettings.map((hotkeySetting) =>
+      hotkeySetting.action === "選択解除"
+        ? { ...hotkeySetting, combination: HotkeyCombination("") }
+        : hotkeySetting,
+    ),
+  };
+
+  expect(configManager.getAll()).toEqual(expected);
+});
 
 it("0.19.1からのマイグレーション時にハミング・ソングスタイル由来のデフォルトプリセットを削除できている", async () => {
   const data = configBugDefaultPreset1996;

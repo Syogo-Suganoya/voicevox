@@ -2593,6 +2593,30 @@ export const audioCommandStore = transformCommandStore(
             break;
         }
 
+        // 長さは操作したモーラの変化率を他のモーラにも掛ける。
+        // 加算だと元々短い音素の長さが先に0になってしまうため。
+        // 操作したモーラの長さが0の場合は変化率を求められないので加算にする。
+        const targetLength =
+          type === "consonant"
+            ? targetMora.consonantLength
+            : type === "vowel"
+              ? targetMora.vowelLength
+              : undefined;
+        const lengthRatio =
+          targetLength != undefined && targetLength > 0
+            ? data / targetLength
+            : undefined;
+        const adjustLength = (length: number) =>
+          Math.max(
+            minMoraLength,
+            Math.min(
+              maxMoraLength,
+              lengthRatio != undefined
+                ? length * lengthRatio
+                : length + diffData,
+            ),
+          );
+
         accentPhrase.moras.forEach((mora, moraIndex) => {
           switch (type) {
             case "pitch":
@@ -2617,10 +2641,7 @@ export const audioCommandStore = transformCommandStore(
                   audioKey,
                   accentPhraseIndex,
                   moraIndex,
-                  data: Math.max(
-                    minMoraLength,
-                    Math.min(maxMoraLength, mora.consonantLength + diffData),
-                  ),
+                  data: adjustLength(mora.consonantLength),
                   type: "consonant",
                 });
               }
@@ -2628,10 +2649,7 @@ export const audioCommandStore = transformCommandStore(
                 audioKey,
                 accentPhraseIndex,
                 moraIndex,
-                data: Math.max(
-                  minMoraLength,
-                  Math.min(maxMoraLength, mora.vowelLength + diffData),
-                ),
+                data: adjustLength(mora.vowelLength),
                 type: "vowel",
               });
               break;

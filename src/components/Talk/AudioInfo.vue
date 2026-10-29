@@ -196,6 +196,9 @@
           @change="handleParameterChange(parameter, $event)"
           @wheel="parameter.slider.qSliderProps.onWheel"
           @pan="parameter.slider.qSliderProps.onPan"
+          @mousedown.capture="handleSliderMouseDown(parameter, $event)"
+          @touchstart.capture="handleSliderMouseDown(parameter, $event)"
+          @contextmenu.prevent="resetParameter(parameter)"
         />
       </div>
     </div>
@@ -311,7 +314,8 @@ import {
 } from "@/helpers/previewSliderHelper";
 import type { EngineManifest } from "@/openapi";
 import { useDefaultPreset } from "@/composables/useDefaultPreset";
-import { SLIDER_PARAMETERS } from "@/store/utility";
+import { isOnCommandOrCtrlKeyDown, SLIDER_PARAMETERS } from "@/store/utility";
+import { isMac } from "@/helpers/platform";
 import { createLogger } from "@/helpers/log";
 
 const props = defineProps<{
@@ -509,6 +513,34 @@ const handleParameterChange = (
     parameter.slider.qSliderProps.max.value,
   );
   return parameter.onChange(value);
+};
+
+/** パラメーターを初期値に戻す */
+const resetParameter = (parameter: Parameter) => {
+  if (parameter.slider.qSliderProps.disable.value) return;
+  const defaultValue = SLIDER_PARAMETERS[parameter.key].defaultValue?.();
+  if (defaultValue == undefined) return;
+  void parameter.onChange(defaultValue);
+};
+
+/**
+ * Ctrl+クリック（MacはCmd+クリック）でパラメーターを初期値に戻す。
+ * 右クリックの場合はcontextmenuイベントで初期値に戻す。
+ */
+const handleSliderMouseDown = (
+  parameter: Parameter,
+  event: MouseEvent | TouchEvent,
+) => {
+  // MacではControl+クリックも右クリックとして扱われ、contextmenuイベントが発生する
+  const isRightClick =
+    event instanceof MouseEvent &&
+    (event.button === 2 || (isMac && event.ctrlKey));
+  if (!isRightClick && !isOnCommandOrCtrlKeyDown(event)) return;
+  // スライダーがクリック位置の値に変わらないよう、QSliderにイベントを渡さない
+  event.stopPropagation();
+  if (isRightClick) return;
+  event.preventDefault();
+  resetParameter(parameter);
 };
 
 // モーフィング

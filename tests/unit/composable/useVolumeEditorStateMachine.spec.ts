@@ -17,7 +17,7 @@ const createStateMachine = () => {
     state: { sequencerVolumeTool: "DRAW" },
     getters: { SELECTED_TRACK_ID: TrackId("trackId") },
     actions: {
-      COMMAND_SET_VOLUME_EDIT_DATA: vi.fn(),
+      COMMAND_UPDATE_VOLUME_EDIT_DATA_RANGE: vi.fn(),
       COMMAND_ERASE_VOLUME_EDIT_DATA: vi.fn(),
     },
   });

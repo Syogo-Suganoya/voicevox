@@ -1263,8 +1263,9 @@ export const songStore = createPartialStore<SongStoreTypes>({
     },
   },
 
-  SET_PITCH_EDIT_DATA: {
-    // ピッチ編集データをセットする。
+  UPDATE_PITCH_EDIT_DATA_RANGE: {
+    // ピッチ編集データのstartFrameからの範囲を、渡されたデータで上書きする。
+    // 範囲外のデータはそのまま残る。
     // track.pitchEditDataの長さが足りない場合は、伸長も行う。
     mutation(state, { pitchArray, startFrame, trackId }) {
       const track = getOrThrow(state.tracks, trackId);
@@ -1287,12 +1288,17 @@ export const songStore = createPartialStore<SongStoreTypes>({
       if (!isValidPitchEditData(pitchArray)) {
         throw new Error("The pitch edit data is invalid.");
       }
-      mutations.SET_PITCH_EDIT_DATA({ pitchArray, startFrame, trackId });
+      mutations.UPDATE_PITCH_EDIT_DATA_RANGE({
+        pitchArray,
+        startFrame,
+        trackId,
+      });
     },
   },
 
-  SET_VOLUME_EDIT_DATA: {
-    // ボリューム編集データをセットする。
+  UPDATE_VOLUME_EDIT_DATA_RANGE: {
+    // ボリューム編集データのstartFrameからの範囲を、渡されたデータで上書きする。
+    // 範囲外のデータはそのまま残る。
     // track.volumeEditDataの長さが足りない場合は、伸長も行う。
     mutation(state, { volumeArray, startFrame, trackId }) {
       const track = getOrThrow(state.tracks, trackId);
@@ -1315,7 +1321,7 @@ export const songStore = createPartialStore<SongStoreTypes>({
       if (!isValidVolumeEditData(volumeArray)) {
         throw new Error("The volume edit data is invalid.");
       }
-      mutations.SET_VOLUME_EDIT_DATA({
+      mutations.UPDATE_VOLUME_EDIT_DATA_RANGE({
         volumeArray,
         startFrame,
         trackId,
@@ -3789,9 +3795,9 @@ export const songCommandStore = transformCommandStore(
         });
       },
     },
-    COMMAND_SET_PITCH_EDIT_DATA: {
+    COMMAND_UPDATE_PITCH_EDIT_DATA_RANGE: {
       mutation(draft, { pitchArray, startFrame, trackId }) {
-        songStore.mutations.SET_PITCH_EDIT_DATA(draft, {
+        songStore.mutations.UPDATE_PITCH_EDIT_DATA_RANGE(draft, {
           pitchArray,
           startFrame,
           trackId,
@@ -3804,16 +3810,16 @@ export const songCommandStore = transformCommandStore(
         if (!isValidPitchEditData(pitchArray)) {
           throw new Error("The pitch edit data is invalid.");
         }
-        mutations.COMMAND_SET_PITCH_EDIT_DATA({
+        mutations.COMMAND_UPDATE_PITCH_EDIT_DATA_RANGE({
           pitchArray,
           startFrame,
           trackId,
         });
       },
     },
-    COMMAND_SET_VOLUME_EDIT_DATA: {
+    COMMAND_UPDATE_VOLUME_EDIT_DATA_RANGE: {
       mutation(draft, { volumeArray, startFrame, trackId }) {
-        songStore.mutations.SET_VOLUME_EDIT_DATA(draft, {
+        songStore.mutations.UPDATE_VOLUME_EDIT_DATA_RANGE(draft, {
           volumeArray,
           startFrame,
           trackId,
@@ -3826,7 +3832,7 @@ export const songCommandStore = transformCommandStore(
         if (!isValidVolumeEditData(volumeArray)) {
           throw new Error("The volume edit data is invalid.");
         }
-        mutations.COMMAND_SET_VOLUME_EDIT_DATA({
+        mutations.COMMAND_UPDATE_VOLUME_EDIT_DATA_RANGE({
           volumeArray,
           startFrame,
           trackId,

@@ -65,6 +65,8 @@ export function sanitizeFileName(fileName: string): string {
 }
 
 type SliderParameter = {
+  /** Ctrl+クリックや右クリックで戻す値。デフォルトプリセットの値と同じ。 */
+  defaultValue?: () => number;
   max: () => number;
   min: () => number;
   step: () => number;
@@ -81,6 +83,7 @@ export const SLIDER_PARAMETERS: Record<PresetSliderKey, SliderParameter> = {
    * 話速パラメータの定義
    */
   speedScale: {
+    defaultValue: () => 1,
     max: () => 2,
     min: () => 0.5,
     step: () => 0.01,
@@ -91,6 +94,7 @@ export const SLIDER_PARAMETERS: Record<PresetSliderKey, SliderParameter> = {
    * 音高パラメータの定義
    */
   pitchScale: {
+    defaultValue: () => 0,
     max: () => 0.15,
     min: () => -0.15,
     step: () => 0.01,
@@ -100,6 +104,7 @@ export const SLIDER_PARAMETERS: Record<PresetSliderKey, SliderParameter> = {
    *  抑揚パラメータの定義
    */
   intonationScale: {
+    defaultValue: () => 1,
     max: () => 2,
     min: () => 0,
     step: () => 0.01,
@@ -110,6 +115,7 @@ export const SLIDER_PARAMETERS: Record<PresetSliderKey, SliderParameter> = {
    *  音量パラメータの定義
    */
   volumeScale: {
+    defaultValue: () => 1,
     max: () => 2,
     min: () => 0,
     step: () => 0.01,
@@ -120,6 +126,7 @@ export const SLIDER_PARAMETERS: Record<PresetSliderKey, SliderParameter> = {
    *  文内無音(倍率)パラメータの定義
    */
   pauseLengthScale: {
+    defaultValue: () => 1,
     max: () => 2,
     min: () => 0,
     step: () => 0.01,
@@ -130,6 +137,7 @@ export const SLIDER_PARAMETERS: Record<PresetSliderKey, SliderParameter> = {
    *  開始無音パラメータの定義
    */
   prePhonemeLength: {
+    defaultValue: () => 0.1,
     max: () => 1.5,
     min: () => 0,
     step: () => 0.01,
@@ -140,6 +148,7 @@ export const SLIDER_PARAMETERS: Record<PresetSliderKey, SliderParameter> = {
    *  終了無音パラメータの定義
    */
   postPhonemeLength: {
+    defaultValue: () => 0.1,
     max: () => 1.5,
     min: () => 0,
     step: () => 0.01,

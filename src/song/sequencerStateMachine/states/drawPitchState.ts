@@ -304,7 +304,7 @@ export class DrawPitchState implements State<
     // 対数スケールから元のスケールに戻す
     const finalPitchEditData = logCombinedData.map((value) => Math.exp(value));
 
-    void context.store.actions.COMMAND_SET_PITCH_EDIT_DATA({
+    void context.store.actions.COMMAND_UPDATE_PITCH_EDIT_DATA_RANGE({
       pitchArray: finalPitchEditData,
       startFrame: contiguousRegionStartFrame,
       trackId: this.targetTrackId,

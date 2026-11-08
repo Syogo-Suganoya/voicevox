@@ -1062,7 +1062,7 @@ export type SongStoreTypes = {
     };
   };
 
-  SET_PITCH_EDIT_DATA: {
+  UPDATE_PITCH_EDIT_DATA_RANGE: {
     mutation: { pitchArray: number[]; startFrame: number; trackId: TrackId };
     action(payload: {
       pitchArray: number[];
@@ -1071,7 +1071,7 @@ export type SongStoreTypes = {
     }): void;
   };
 
-  SET_VOLUME_EDIT_DATA: {
+  UPDATE_VOLUME_EDIT_DATA_RANGE: {
     mutation: {
       volumeArray: VolumeEditValue[];
       startFrame: number;
@@ -1644,7 +1644,7 @@ export type SongCommandStoreTypes = {
     }): void;
   };
 
-  COMMAND_SET_PITCH_EDIT_DATA: {
+  COMMAND_UPDATE_PITCH_EDIT_DATA_RANGE: {
     mutation: { pitchArray: number[]; startFrame: number; trackId: TrackId };
     action(payload: {
       pitchArray: number[];
@@ -1653,7 +1653,7 @@ export type SongCommandStoreTypes = {
     }): void;
   };
 
-  COMMAND_SET_VOLUME_EDIT_DATA: {
+  COMMAND_UPDATE_VOLUME_EDIT_DATA_RANGE: {
     mutation: {
       volumeArray: VolumeEditValue[];
       startFrame: number;

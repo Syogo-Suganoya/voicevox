@@ -189,7 +189,7 @@ describe("DrawVolumeState", () => {
     expect(context.tooltipData.value).toBeUndefined();
 
     expect(
-      context.store.actions.COMMAND_SET_VOLUME_EDIT_DATA,
+      context.store.actions.COMMAND_UPDATE_VOLUME_EDIT_DATA_RANGE,
     ).toHaveBeenCalledWith({
       volumeArray: [0, 3, 6],
       startFrame: 10,
@@ -220,7 +220,7 @@ function createContext(
         SELECTED_TRACK_ID: TrackId("trackId"),
       },
       actions: {
-        COMMAND_SET_VOLUME_EDIT_DATA: vi.fn(),
+        COMMAND_UPDATE_VOLUME_EDIT_DATA_RANGE: vi.fn(),
         COMMAND_ERASE_VOLUME_EDIT_DATA: vi.fn(),
       },
     },

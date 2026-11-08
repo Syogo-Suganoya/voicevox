@@ -378,7 +378,7 @@ describe("COMMAND_ERASE_VOLUME_EDIT_DATA", () => {
   test("複数範囲を1コマンドで削除し範囲外のデータを保持する", async () => {
     const trackId = store.state.trackOrder[0];
     const volumeEditData = [-6, -3, 0, 3, 6, 9, 12];
-    store.mutations.SET_VOLUME_EDIT_DATA({
+    store.mutations.UPDATE_VOLUME_EDIT_DATA_RANGE({
       volumeArray: volumeEditData,
       startFrame: 0,
       trackId,

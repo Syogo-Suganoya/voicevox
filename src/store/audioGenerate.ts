@@ -8,55 +8,78 @@ import { convertAudioQueryFromEditorToEngine } from "./proxy";
 import { generateTempUniqueId } from "./utility";
 import { ensureNotNullish, type Brand } from "@/type/utility";
 
-export async function generateLabFromAudioQuery(
-  audioQuery: EditorAudioQuery,
-  offset?: number,
-) {
+/** labの1行分。1つの音素の区間を表す。時刻の単位は100ナノ秒。 */
+type LabEntry = {
+  start: number;
+  end: number;
+  phoneme: string;
+};
+
+/** 音素ごとの区間を並べたもの。lab形式の文字列に変換して書き出す。 */
+export class Lab {
+  constructor(private readonly entries: readonly LabEntry[]) {}
+
+  /** 最後の音素の終了時刻。音素が1つもない場合は0。 */
+  get endTime(): number {
+    return this.entries.at(-1)?.end ?? 0;
+  }
+
+  /** すべての区間を`offset`だけ後ろにずらしたLabを返す。 */
+  shift(offset: number): Lab {
+    return new Lab(
+      this.entries.map((entry) => ({
+        ...entry,
+        start: entry.start + offset,
+        end: entry.end + offset,
+      })),
+    );
+  }
+
+  /** lab形式の文字列に変換する。各行は改行で終わる。 */
+  toString(): string {
+    return this.entries
+      .map(
+        (entry) =>
+          `${entry.start.toFixed()} ${entry.end.toFixed()} ${entry.phoneme}\n`,
+      )
+      .join("");
+  }
+}
+
+export function generateLabFromAudioQuery(audioQuery: EditorAudioQuery): Lab {
   const speedScale = audioQuery.speedScale;
 
-  let labString = "";
-  let timestamp = offset ?? 0;
+  const entries: LabEntry[] = [];
+  let timestamp = 0;
+  const addEntry = (length: number, phoneme: string) => {
+    const start = timestamp;
+    timestamp += (length * 10000000) / speedScale;
+    entries.push({ start, end: timestamp, phoneme });
+  };
 
-  labString += timestamp.toFixed() + " ";
-  timestamp += (audioQuery.prePhonemeLength * 10000000) / speedScale;
-  labString += timestamp.toFixed() + " ";
-  labString += "pau" + "\n";
+  addEntry(audioQuery.prePhonemeLength, "pau");
 
   audioQuery.accentPhrases.forEach((accentPhrase) => {
     accentPhrase.moras.forEach((mora) => {
       if (mora.consonantLength != undefined && mora.consonant != undefined) {
-        labString += timestamp.toFixed() + " ";
-        timestamp += (mora.consonantLength * 10000000) / speedScale;
-        labString += timestamp.toFixed() + " ";
-        labString += mora.consonant + "\n";
+        addEntry(mora.consonantLength, mora.consonant);
       }
-      labString += timestamp.toFixed() + " ";
-      timestamp += (mora.vowelLength * 10000000) / speedScale;
-      labString += timestamp.toFixed() + " ";
-      if (mora.vowel != "N") {
-        labString += mora.vowel.toLowerCase() + "\n";
-      } else {
-        labString += mora.vowel + "\n";
-      }
+      addEntry(
+        mora.vowelLength,
+        mora.vowel != "N" ? mora.vowel.toLowerCase() : mora.vowel,
+      );
     });
     if (accentPhrase.pauseMora != undefined) {
-      labString += timestamp.toFixed() + " ";
-      timestamp +=
-        (accentPhrase.pauseMora.vowelLength *
-          audioQuery.pauseLengthScale *
-          10000000) /
-        speedScale;
-      labString += timestamp.toFixed() + " ";
-      labString += accentPhrase.pauseMora.vowel + "\n";
+      addEntry(
+        accentPhrase.pauseMora.vowelLength * audioQuery.pauseLengthScale,
+        accentPhrase.pauseMora.vowel,
+      );
     }
   });
 
-  labString += timestamp.toFixed() + " ";
-  timestamp += (audioQuery.postPhonemeLength * 10000000) / speedScale;
-  labString += timestamp.toFixed() + " ";
-  labString += "pau" + "\n";
+  addEntry(audioQuery.postPhonemeLength, "pau");
 
-  return labString;
+  return new Lab(entries);
 }
 
 export type AudioUniqueId = Brand<string, "AudioUniqueId">;

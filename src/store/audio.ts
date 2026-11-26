@@ -30,6 +30,7 @@ import {
   generateUniqueIdAndQuery,
   NotMorphableError,
   generateLabFromAudioQuery,
+  type Lab,
   handlePossiblyNotMorphableError,
   isMorphable,
   type AudioUniqueId,
@@ -1397,7 +1398,7 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
   },
 
   GENERATE_AUDIO: {
-    async action({ state, actions }, { audioKey, labOffset }) {
+    async action({ state, actions }, { audioKey }) {
       const audioItem = state.audioItems[audioKey];
 
       let audio: Blob;
@@ -1412,10 +1413,7 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
       }
 
       // 大して処理能力を要しないので、書き出し設定のon/offにかかわらず生成してしまう
-      const lab = await generateLabFromAudioQuery(
-        ensureNotNullish(audioItem.query),
-        labOffset,
-      );
+      const lab = generateLabFromAudioQuery(ensureNotNullish(audioItem.query));
       const text = extractExportText(audioItem.text, {
         enableMemoNotation: state.enableMemoNotation,
         enableRubyNotation: state.enableRubyNotation,
@@ -1482,7 +1480,7 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
 
           if (state.savingSetting.exportLab) {
             await writeTextFile({
-              text: lab,
+              text: lab.toString(),
               filePath: filePath.replace(/\.wav$/, ".lab"),
             }).then(getValueOrThrow);
           }
@@ -1599,7 +1597,7 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
         }
 
         const encodedBlobs: string[] = [];
-        const labs: string[] = [];
+        const labs: Lab[] = [];
         const texts: string[] = [];
 
         const totalCount = state.audioKeys.length;
@@ -1609,7 +1607,6 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
         for (const audioKey of state.audioKeys) {
           const generateAudioResult = await actions.GENERATE_AUDIO({
             audioKey,
-            labOffset,
           });
           callback?.(++finishedCount, totalCount);
           if (!generateAudioResult.ok) {
@@ -1631,11 +1628,9 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
           }
           encodedBlobs.push(encodedBlob);
 
-          labs.push(lab);
-
-          // 最終音素の終了時刻を取得する
-          const splitLab = lab.split(" ");
-          labOffset = Number(splitLab[splitLab.length - 2]);
+          // 1つ前の音声の終了時刻だけ後ろにずらす
+          labs.push(lab.shift(labOffset));
+          labOffset += lab.endTime;
 
           texts.push(text);
         }
@@ -1667,8 +1662,8 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
 
           if (state.savingSetting.exportLab) {
             await writeTextFile({
-              // `generateLabFromAudioQuery`で生成される文字列はすべて改行で終わるので、追加で改行を挟む必要はない
-              text: labs.join(""),
+              // `Lab.toString`で生成される文字列はすべて改行で終わるので、追加で改行を挟む必要はない
+              text: labs.map((lab) => lab.toString()).join(""),
               filePath: filePath.replace(/\.wav$/, ".lab"),
             }).then(getValueOrThrow);
           }
